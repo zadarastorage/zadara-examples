@@ -1,0 +1,47 @@
+#cloud-config
+write_files:
+  - path: /etc/rancher/rke2/config.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      write-kubeconfig-mode: "0644"
+      selinux: true 
+      cni: ${ cni }
+      token: ${ token }
+      cloud-provider-name: aws
+      cloud-provider-config: "/etc/rancher/rke2/cloud.conf"
+      tls-san:
+        %{~ for single_san in san ~}
+        - ${ single_san }
+        %{~ endfor ~}
+      %{~ if taint_servers ~}
+      node-taint:
+        - "CriticalAddonsOnly=true:NoExecute"
+      %{~ endif ~}
+      %{~ if length(node_labels) > 0 ~}
+      node-label:
+      %{~ for label in node_labels ~}
+        - "${label}"
+      %{~ endfor ~}
+      %{~ endif ~}
+  - path: /etc/rancher/rke2/cloud.conf
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Global]
+        Zone=eu-west-1a
+      [ServiceOverride "ec2"]
+        Service=ec2
+        Region=eu-west-1
+        URL=https://${ api_url }/api/v2/aws/ec2
+        SigningRegion=eu-west-1
+      [ServiceOverride "autoscaling"]
+        Service=autoscaling
+        Region=eu-west-1
+        URL=https://${ api_url }/api/v2/aws/autoscaling
+        SigningRegion=eu-west-1
+      [ServiceOverride "elasticloadbalancing"]
+        Service=elasticloadbalancing
+        Region=eu-west-1
+        URL=https://${ api_url }/api/v2/aws/elbv2
+        SigningRegion=eu-west-1
