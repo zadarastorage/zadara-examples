@@ -22,7 +22,7 @@
     * You can import the RKE2 1.23.4 image directly from the zCompute GUI
         * On the `images` module, click on `create`
         * Name your image and select the right project/scope
-        * Select to create image from URL and use this address: `s3://confimage1/centos-7.8-rke2-v1.23.4-rke2r1.qcow2`
+        * Select to create image from URL and use this address: `https://confimage1.s3.amazonaws.com/centos-7.8-rke2-v1.23.4-rke2r1.qcow2`
     * If you wish to create your own image
         * Make sure you have appropriate (admin-level) permissions
         * Run packer as described below
