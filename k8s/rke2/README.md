@@ -2,20 +2,32 @@
 
 ## Prerequisites: zCompute
 
-* VPC:
-    * Public subnet (for the bastion VM)
-    * Private subnet (for the Kubernetes nodes VMs) - you will need to provide Terraform with the id
-    * Security Group should enable all internal traffic (using the group)
+* Network:
+    * NAT gateway service must be enabled
+* Images
+    * CentOS image should be imported from the Marketplace (for the Bastion VM)
 * Credentials:
-    * Key-Pair for the master servers - you will need to provide Terraform with the name
-    * Key-Pair for the worker agents (can be the same one as the master one) - you will need to provide Terraform with the name
-    * AWS programmatic credentials with admin permissions - you will need to provide Terraform/Packer with the access key & secret id
+    * Key-pair for the bastion server - you will need to provide Terraform with the name
+    * Key-Pair for the master servers (can be the same as the other one) - you will need to provide Terraform with the name
+    * Key-Pair for the worker agents (can be the same as the other one) - you will need to provide Terraform with the name
+    * AWS programmatic credentials with admin permissions for the relevant (not default) project - you will need to provide Terraform/Packer with the access key & secret id
 
-## Step 1: Bastion VM
-* Accessible VM (on the public subnet) with access to the private subnet (where the actual Kubernetes nodes are located)
-* You can use a dedicated key-pair or reuse the Kubernetes master/worker one, depending on your security concerns
-* Security Group should allow incoming SSH communication (port 22) from the world
-* Attach an elastic IP to the bastion so you can easily access it
+## Step 1: Automated infrastructure deployment (Terraform)
+* Go to the `infra-terraform` directory
+* Terraform init
+* Terraform plan
+* Terraform apply
+    * VPC to hold the entire solution
+    * Public subnet for the bastion VM and its corresponding Internet Gateway
+    * Private subnet for the Kubernetes nodes VMs
+    * Routing tables to accomodate public/private subnets
+    * Default Security Group for the VPC as well as RKE2-related one (based on the SG itself)
+    * Bastion VM on the public subnet (accessible to the world) with access to the private subnet (where the Kubernetes nodes will be located)
+    * Network Load Balancer to hold the Kubernetes API Server endpoints - accessible to the world by default, can be hardened for Bastion-only access as part of Terraform variable `expose_k8s_api_publicly`
+    * Elastic IPs for the Bastion as well as the Network Load Balancer
+* Terraform will output the relevant information required for step #3 - if you lose track of them you can always run `terraform output` to list them again
+* In addition you will also be required to provide the NLB's private & public IPs and internal DNS name (you can get those from the GUI)
+
 
 ## Step 2: RKE2 image (Packer)
 * Either import or create the RKE2 image
@@ -23,11 +35,11 @@
         * On the `images` module, click on `create`
         * Name your image and select the right project/scope
         * Select to create image from URL and use this address: `https://confimage1.s3.amazonaws.com/centos-7.8-rke2-v1.23.4-rke2r1.qcow2`
-    * If you wish to create your own image
+    * If you wish to create your own image (and control the exact RKE2 version, etc.)
         * Make sure you have appropriate (admin-level) permissions
         * Run packer as described below
         * Disregard Packer's error message about DBManager
-* You will need to provide Terraform with the cluster’s AMI (AWS ids)
+* You will need to provide Terraform with the RKE2 AMI (AWS id)
 
 ### Creating the image directly on zCompute
 This build will allow you to build the image directly on the zCompute system.
@@ -62,17 +74,9 @@ The following parameters should be provided:
 run the packer command using:`packer build -only=source.qemu.centos [-var "name1=value1" [-var "name2=value2"]] .`
 
 
-## Step 3: Load Balancer
-
-* Create NLB on the cluster's relevant subnet & Security Group - make sure it has high-availability
-* You will need to provide Terraform with the below NLB information:
-    * LB id
-    * Private IP
-    * Public IP
-    * Internal DNS
-
 ## Step 3: Automated RKE2 deployment (Terraform)
 
+* Go to the `rke2-terraform` directory
 * Terraform init
 * Terraform plan
 * Terraform apply
@@ -218,5 +222,6 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
 
 ## Step 7: Cluster auto-scaler (optional)
 * Only relevant if you wish to enable the Kubernetes [cluster autoscaler](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md) and dynamically control your worker nodes scaling
-* Create a dedicated AWS role with the required permissions
-* Create an instance profile 
+* Deploy [cluster-autoscaler](https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler)
+* Configure cluster-autoscaler with [AWS credentials](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#using-aws-credentials) (zCompute doesn't support IAM roles for Service Accounts)
+* Define the workers ASG and the lower/upper bounds
