@@ -167,7 +167,7 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
 	  10.0.16.7 > 10.0.16.22: (tos 0x0, ttl 63, id 53293, offset 0, flags [none], proto ICMP (1), length 84)
 	  10.42.185.7 > 10.42.0.27: ICMP echo reply, id 21, seq 151, length 64
 
-## Step 5: Zadara Storage Class (optionl)
+## Step 5: Zadara Storage Class (optional)
 
 * Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
 * Requires a dedicated VPSA with 1 pool and programmatic credentials (access key) - you will need to provide the access key to the Zadara CSI Storage Class configuration
@@ -180,7 +180,7 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
     * Follow the Zadara CSI documentation to configure [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/master/docs/configuring_storage.md)
 
 
-## Step 6: AWS Load Balancer controller (optionl)
+## Step 6: AWS Load Balancer controller (optional)
 
 * Inly relevant if you wish to use the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) for ingress controller
 * Add the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/tree/main/helm/aws-load-balancer-controller) Helm repo: \
@@ -188,7 +188,7 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
 * Create value file named <code>values.yaml</code> according to the below specification (remember to update the cluster's hostname with the zCompute URL):
   ```yaml
   clusterName:  # cluster name
-  vpcId: # primary cluster's vpc id
+  vpcId: # cluster's vpc id
   image:
     repository: amazon/aws-alb-ingress-controller
   awsApiEndpoints: "ec2=https://<cluster_hostname>/api/v2/aws/ec2,elasticloadbalancing=https://<cluster_hostname>/api/v2/aws/elbv2,acm=https://<cluster_hostname>/api/v2/aws/acm,sts=https://<cluster_hostname>/api/v2/aws/sts"
@@ -204,9 +204,6 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
   <code>helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -f values.yaml -n kube-system</code>
 * Deploy your ingress controller (for example, nginx) and configure it with the following:
   ```yaml
-  nodeSelector:
-    worker-role: primary
-
   service:
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
