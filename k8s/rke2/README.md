@@ -1,19 +1,20 @@
 # RKE2 deployment setup
 
-## Prerequisites: Compute cluster
+## Prerequisites: zCompute
 
-* zCompute cluster's VPC configuration - you will need to provide Terraform with the relevant resource ids:
-    * Public/Private subnets should exist (for the load balancer)
-    * Security group should enable all internal traffic (using the group) as well as all traffic to/from the VPSA
-    * Routing to VPSA (if not on the same direct subnet range)
-* Key-Pair for the master servers - you will need to provide Terraform with the name
-* Key-Pair for the worker agents (can be the same one as the master one) - you will need to provide Terraform with the name
-* AWS programmatic credentials with admin permissions - you will need to provide Terraform/Packer with the access key & secret id
+* VPC:
+    * Public subnet (for the bastion VM)
+    * Private subnet (for the Kubernetes nodes VMs) - you will need to provide Terraform with the id
+    * Security Group should enable all internal traffic (using the group)
+* Credentials:
+    * Key-Pair for the master servers - you will need to provide Terraform with the name
+    * Key-Pair for the worker agents (can be the same one as the master one) - you will need to provide Terraform with the name
+    * AWS programmatic credentials with admin permissions - you will need to provide Terraform/Packer with the access key & secret id
 
 ## Step 1: Bastion VM
 * Accessible VM (on the public subnet) with access to the private subnet (where the actual Kubernetes nodes are located)
-* You can use a dedicated key-pair or a similar one, depending on your security concerns
-* Security group should allow incoming SSH communication (port 22) from the world
+* You can use a dedicated key-pair or reuse the Kubernetes master/worker one, depending on your security concerns
+* Security Group should allow incoming SSH communication (port 22) from the world
 * Attach an elastic IP to the bastion so you can easily access it
 
 ## Step 2: RKE2 image (Packer)
@@ -63,7 +64,7 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
 
 ## Step 3: Load Balancer
 
-* Create NLB on the cluster's relevant subnet & security group - make sure it has high-availability
+* Create NLB on the cluster's relevant subnet & Security Group - make sure it has high-availability
 * You will need to provide Terraform with the below NLB information:
     * LB id
     * Private IP
@@ -171,6 +172,7 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
 
 * Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
 * Requires a dedicated VPSA with 1 pool and programmatic credentials (access key) - you will need to provide the access key to the Zadara CSI Storage Class configuration
+* Make sure routing is in place and Security Group allows communication between the private subnet and the VPSA
 * Deploy the Zadara CSI V2
     * Clone the [zadara-csi](https://github.com/zadarastorage/zadara-csi) repository
     * Checkout the master branch and get the chart: \
@@ -182,7 +184,7 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
 
 ## Step 6: AWS Load Balancer controller (optional)
 
-* Inly relevant if you wish to use the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) for ingress controller
+* Only relevant if you wish to use the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) for ingress controller
 * Add the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/tree/main/helm/aws-load-balancer-controller) Helm repo: \
   <code>helm repo add eks [https://aws.github.io/eks-charts](https://aws.github.io/eks-charts)</code>
 * Create value file named <code>values.yaml</code> according to the below specification (remember to update the cluster's hostname with the zCompute URL):
@@ -217,5 +219,4 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
 ## Step 7: Cluster auto-scaler (optional)
 * Only relevant if you wish to enable the Kubernetes [cluster autoscaler](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md) and dynamically control your worker nodes scaling
 * Create a dedicated AWS role with the required permissions
-* Create an instance profile
-* 
+* Create an instance profile 
