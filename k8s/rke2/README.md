@@ -2,10 +2,12 @@
 
 ## Prerequisites: zCompute
 
+* Storage
+    * Add a "default" alias for the default storage pool (required for Terraform's volume type in step 3 - you can change this later)
 * Network:
     * NAT gateway service must be enabled
 * Images
-    * CentOS image should be imported from the Marketplace to be used for the Bastion VM - you will need to provide Terraform the its AMI
+    * CentOS image should be imported from the Marketplace to be used for the Bastion VM - you will need to provide Terraform the its AMI (AWS ID)
 * Credentials:
     * Key-pair for the bastion server - you will need to provide Terraform with the name
     * Key-Pair for the master servers (can be the same as the other one) - you will need to provide Terraform with the name
@@ -14,6 +16,12 @@
 
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
+* Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
+    * `zcompute_api` - the URL/IP of the zCompute cluster
+    * `cluster_access_key` - the admin access key
+    * `cluster_access_secret_id` - the admin secret key
+    * `bastion_key_name` - the Key-Pair for the bastion
+    * `bastion_ami` - the CentOS image AMI (AWS ID)
 * Terraform init
 * Terraform plan
 * Terraform apply
@@ -25,6 +33,7 @@
     * Bastion VM on the public subnet (accessible to the world) with access to the private subnet (where the Kubernetes nodes will be located)
     * Network Load Balancer to hold the Kubernetes API Server endpoints - accessible to the world by default, can be hardened for Bastion-only access as part of Terraform variable `expose_k8s_api_publicly`
     * Elastic IPs for the Bastion as well as the Network Load Balancer
+* Due to current zCompute limitation, you will need to re-apply Terraform again in order to poplate tags (resource names, etc.)
 * Terraform will output the relevant information required for step #3 - if you lose track of them you can always run `terraform output` to list them again
 * In addition you will also be required to provide the NLB's private & public IPs and internal DNS name (you can get those from the GUI)
 
@@ -37,33 +46,30 @@
         * Select to create image from URL and use this address: `https://confimage1.s3.amazonaws.com/centos-7.8-rke2-v1.23.4-rke2r1.qcow2`
     * If you wish to create your own image (and control the exact RKE2 version, etc.)
         * Make sure you have appropriate (admin-level) permissions
+        * Go to the packer directory
         * Run packer as described below
         * Disregard Packer's error message about DBManager
 * You will need to provide Terraform with the RKE2 AMI (AWS id)
 
 ### Creating the image directly on zCompute
-This build will allow you to build the image directly on the zCompute system.
-It requires access to the zCompute API.
+This build will allow you to build the image directly on the zCompute system, using the bastion VM. 
  
-1. Provision a bastion host with a keypair of your choice and attach an elastic IP to it.
-1. Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it. </br>
-   The following parameters should be provided:
+Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it.
+The following parameters should be provided:
 
    - `zcompute_api` - IP address or hostname of the zCompute API
    - `ami_id` - AMI ID Of a valid and accessible CentOS 7.8 Cloud image in zCompute
    - `ssh_username` - ssh username for the image
    - `subnet_id` - Subnet ID to provision the builder in
    - `ssh_keypair_name` - Keypair name to use for the builder
-   - `private_keypair_path` - This SSH private key will be used by packer script to login in to the bastion and builder instances.
+   - `private_keypair_path` - local path to the SSH private key (will be used by packer script to login in to the bastion and builder instances)
 
-   > There are other parameters that can be modified, please consult with their description in `variables.pkr.hcl` file.
-
-run the packer command using: `packer build -only=rke2-centos.amazon-ebs.centos [-var "name1=value1" [-var "name2=value2"]] .`
+run the packer command using: `packer build -only=rke2-centos.amazon-ebs.centos .`
 
 ### Creating the image using a local QEMU builder
-This build will allow you to build the image locally. 
-it require a local qemu installed on the machine building the image
-Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it. </br>
+This build will allow you to build the image locally - it require a local qemu installed on the machine building the image.
+
+Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it.
 The following parameters should be provided:
 
    - `private_keypair_path` - SSH private key file to use when accessing the generated VM - 
@@ -71,12 +77,30 @@ The following parameters should be provided:
    - `rke2_k8s_version` - Kubernetes version of the RKE2 distribution
    - `rke2_revision` - RKE2 revision
 
-run the packer command using:`packer build -only=source.qemu.centos [-var "name1=value1" [-var "name2=value2"]] .`
+run the packer command using:`packer build -only=source.qemu.centos .`
 
 
 ## Step 3: Automated RKE2 deployment (Terraform)
 
 * Go to the `rke2-terraform` directory
+* Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
+    * `environment` - the prefix for VM names (defaults to "k8s")
+    * `cluster_access_key` - the admin access key
+    * `cluster_access_secret_id` - the admin secret key
+    * `zcompute_api` - the URL/IP of the zCompute cluster
+    * `vpc_id` - the target VPC id
+    * `private_subnets_ids` - the private subnet id
+    * `public_subnets_ids` - the public subnet id
+    * `security_groups_ids` - the security group id to be applied on the VMs
+    * `rke2_ami_id` - the RKE2 AMI (AWS ID)
+    * `master_load_balancer_id` - the NLB id
+    * `master_load_balancer_public_ip` -  the NLB public IP
+    * `master_load_balancer_private_ip` - the NLB private IP
+    * `master_load_balancer_internal_dns` - the NLB internal DNS name
+    * `masters_count` - the amount of master nodes (minimal is 1, suggested 3 for HA)
+    * `workers_count` - the amount of worder nodes (minimal is 0, can be later managed by cluster-autoscaler)
+    * `master_key_pair` - the Key-Pair for the master VMs 
+    * `worker_key_pair` - the Key-Pair for the worker VMs
 * Terraform init
 * Terraform plan
 * Terraform apply
@@ -84,6 +108,8 @@ run the packer command using:`packer build -only=source.qemu.centos [-var "name1
     * Load Balancer target group for the master nodes ASG + public listener on 6443 for the API server
     * RKE2 worker nodes ASGs
     * Tag the existing private & public subnets for Load Balancer controller discovery
+* Due to current zCompute limitation, you will need to re-apply Terraform again in order to poplate tags (resource names, etc.)
+
 
 ## Step 4: Calico IPIP (optional)
 
