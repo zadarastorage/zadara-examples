@@ -5,7 +5,7 @@
 * Network:
     * NAT gateway service must be enabled
 * Images
-    * CentOS image should be imported from the Marketplace (for the Bastion VM)
+    * CentOS image should be imported from the Marketplace to be used for the Bastion VM - you will need to provide Terraform the its AMI
 * Credentials:
     * Key-pair for the bastion server - you will need to provide Terraform with the name
     * Key-Pair for the master servers (can be the same as the other one) - you will need to provide Terraform with the name
