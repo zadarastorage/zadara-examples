@@ -150,7 +150,13 @@ build {
       "sudo cloud-init clean",
       "rm -rf /home/centos/.ssh/authorized_keys",
       "touch /home/centos/.ssh/authorized_keys",
-      "chmod 0600 /home/centos/.ssh/authorized_keys"
+      "chmod 0600 /home/centos/.ssh/authorized_keys",
+      "sudo yum install epel-release -y",
+      "sudo yum install jq -y",
+      "sudo yum install unzip -y",
+      "sudo curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
+      "sudo unzip -o awscliv2.zip",
+      "sudo ./aws/install --update"
     ]
   }
 }

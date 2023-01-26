@@ -8,9 +8,15 @@ variable "cluster_name" {
   default     = "default"
 }
 
-variable "zcompute_api" {
+variable "zcompute_public_api" {
   type        = string
   description = "IP/DNS of the zCompute cluster API endpoint"
+}
+
+variable "zcompute_private_api" {
+  type        = string
+  default     = null
+  description = "IP/DNS of the zCompute cluster API internal endpoint"
 }
 
 variable "rke2_ami_id" {
@@ -104,7 +110,7 @@ variable "master_load_balancer_internal_dns" {
 }
 
 variable "k8s_api_server_port" {
-  type = number
+  type    = number
   default = 6443
 }
 
@@ -116,4 +122,16 @@ variable "cluster_access_key" {
 variable "cluster_access_secret_id" {
   type      = string
   sensitive = true
+}
+
+variable "masters_instance_profile" {
+  type        = string
+  description = "instance profile id, if not provided will be created by tf, be aware requires advanced IAM permissions"
+  default     = null
+}
+
+variable "workers_instance_profile" {
+  type        = string
+  description = "instance profile id, if not provided will be created by tf, be aware requires advanced IAM permissions"
+  default     = null
 }

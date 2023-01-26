@@ -14,6 +14,8 @@ resource "aws_lb" "rke2_masters_private" {
   tags = {
     ManagedBy = "rke2 terraform"
   }
+
+  depends_on = [aws_vpc.rke2_vpc, aws_subnet.rke2_public, aws_subnet.rke2_private]
 }
 
 resource "aws_lb" "rke2_masters_public" {
@@ -28,4 +30,6 @@ resource "aws_lb" "rke2_masters_public" {
   tags = {
     ManagedBy = "rke2 terraform"
   }
+
+  depends_on = [aws_vpc.rke2_vpc, aws_subnet.rke2_public, aws_subnet.rke2_private]
 }

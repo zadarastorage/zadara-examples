@@ -31,7 +31,7 @@ elect_leader() {
   # Fetch other running instances in ASG
   instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
   instances=$(aws autoscaling describe-auto-scaling-groups --endpoint-url "https://${api_url}/api/v2/aws/autoscaling" --auto-scaling-group-name "${asg_name}" --query 'AutoScalingGroups[*].Instances[?HealthStatus==`Healthy`].InstanceId' --output text)
-  sorted_instances=$(aws ec2 describe-instances --instance-ids $(echo -e $instances) | jq -r '.Reservations[].Instances[] | "{\"Name\": \"\(.Tags[] | select(.Key == "Name") | .["Name"] = .Value | .Name)\", \"Id\": \"\(.InstanceId)\"}"' | jq -s '.[] | { id: .Id, name: .Name, idx: (.Name | capture("(?<v>[[:digit:].]+)$").v)}' | jq -s -c 'sort_by(.idx)')
+  sorted_instances=$(aws ec2 describe-instances --endpoint-url "https://${api_url}/api/v2/aws/ec2" --instance-ids $(echo -e $instances) | jq -r '.Reservations[].Instances[] | "{\"Name\": \"\(.Tags[] | select(.Key == "Name") | .["Name"] = .Value | .Name)\", \"Id\": \"\(.InstanceId)\"}"' | jq -s '.[] | { id: .Id, name: .Name, idx: (.Name | capture("(?<v>[[:digit:].]+)$").v)}' | jq -s -c 'sort_by(.idx)')
   leader_instance=$(echo $sorted_instances | jq -r '.[0].id')
 
   info "Current instance: $instance_id | Leader instance: $leader_instance"

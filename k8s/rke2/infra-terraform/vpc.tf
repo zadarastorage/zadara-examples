@@ -21,6 +21,8 @@ resource "aws_vpc_dhcp_options_association" "dns_resolver" {
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [aws_vpc.rke2_vpc]
 }
 
 resource "aws_internet_gateway" "rke2" {
@@ -28,6 +30,8 @@ resource "aws_internet_gateway" "rke2" {
   tags   = {
     Name = "${var.environment}-vpc-igw"
   }
+
+  depends_on = [aws_vpc.rke2_vpc]
 }
 
 resource "aws_eip" "rke2" {
@@ -35,6 +39,8 @@ resource "aws_eip" "rke2" {
   tags = {
     Name = "${var.environment}-vpc-ngw-eip"
   }
+
+  depends_on = [aws_vpc.rke2_vpc, aws_route_table.rke2_public]
 }
 
 resource "aws_nat_gateway" "rke2" {
@@ -43,6 +49,8 @@ resource "aws_nat_gateway" "rke2" {
   tags          = {
     Name = "${var.environment}-vpc-ngw"
   }
+
+  depends_on = [aws_vpc.rke2_vpc, aws_subnet.rke2_public, aws_eip.rke2]
 }
 
 resource "aws_subnet" "rke2_public" {
@@ -51,6 +59,8 @@ resource "aws_subnet" "rke2_public" {
   tags       = {
     Name = "${var.environment}-vpc-rke2-public-subnet"
   }
+
+  depends_on = [aws_vpc.rke2_vpc]
 }
 
 resource "aws_subnet" "rke2_private" {
@@ -59,6 +69,8 @@ resource "aws_subnet" "rke2_private" {
   tags       = {
     Name = "${var.environment}-vpc-rke2-private-subnet"
   }
+
+  depends_on = [aws_vpc.rke2_vpc]
 }
 
 resource "aws_route_table" "rke2_public" {
@@ -66,6 +78,8 @@ resource "aws_route_table" "rke2_public" {
   tags   = {
     Name = "${var.environment}-vpc-rke2-public-rt"
   }
+
+  depends_on = [aws_vpc.rke2_vpc]
 }
 
 resource "aws_route" "igw" {
@@ -91,6 +105,7 @@ resource "aws_route" "ngw" {
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.rke2.id
   depends_on             = [
+    aws_vpc.rke2_vpc,
     aws_default_route_table.rke2_private,
     aws_nat_gateway.rke2,
   ]

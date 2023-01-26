@@ -59,7 +59,7 @@ resource "aws_lb_listener" "kube_internal_master" {
 
 locals {
   master_lb_hostname = var.master_load_balancer_internal_dns != "" ? split(".", var.master_load_balancer_internal_dns)[0] : ""
-  lb_url         = "https://${var.master_load_balancer_private_ip}:9345"
+  lb_url             = "https://${var.master_load_balancer_private_ip}:9345"
 
   rke_san = [
     var.master_load_balancer_public_ip,
@@ -75,77 +75,11 @@ locals {
         {
             "Effect": "Allow",
             "Action": [
-                "autoscaling:DescribeAutoScalingGroups",
-                "autoscaling:UpdateAutoScalingGroup",
-                "ec2:AttachVolume",
-                "ec2:AuthorizeSecurityGroupIngress",
-                "ec2:CreateRoute",
-                "ec2:CreateSecurityGroup",
-                "ec2:CreateTags",
-                "ec2:CreateVolume",
-                "ec2:DeleteRoute",
-                "ec2:DeleteSecurityGroup",
-                "ec2:DeleteVolume",
-                "ec2:DescribeInstances",
-                "ec2:DescribeRouteTables",
-                "ec2:DescribeSecurityGroups",
-                "ec2:DescribeSubnets",
-                "ec2:DescribeVolumes",
-                "ec2:DescribeVolumesModifications",
-                "ec2:DescribeVpcs",
-                "ec2:DescribeDhcpOptions",
-                "ec2:DescribeNetworkInterfaces",
-                "ec2:DetachVolume",
-                "ec2:ModifyInstanceAttribute",
-                "ec2:ModifyVolume",
-                "ec2:RevokeSecurityGroupIngress",
-                "ec2:DescribeAccountAttributes",
-                "ec2:DescribeAddresses",
-                "ec2:DescribeInternetGateways",
-                "elasticloadbalancing:AddTags",
-                "elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
-                "elasticloadbalancing:AttachLoadBalancerToSubnets",
-                "elasticloadbalancing:ConfigureHealthCheck",
-                "elasticloadbalancing:CreateListener",
-                "elasticloadbalancing:CreateLoadBalancer",
-                "elasticloadbalancing:CreateLoadBalancerListeners",
-                "elasticloadbalancing:CreateLoadBalancerPolicy",
-                "elasticloadbalancing:CreateTargetGroup",
-                "elasticloadbalancing:DeleteListener",
-                "elasticloadbalancing:DeleteLoadBalancer",
-                "elasticloadbalancing:DeleteLoadBalancerListeners",
-                "elasticloadbalancing:DeleteTargetGroup",
-                "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
-                "elasticloadbalancing:DeregisterTargets",
-                "elasticloadbalancing:DescribeListeners",
-                "elasticloadbalancing:DescribeLoadBalancerAttributes",
-                "elasticloadbalancing:DescribeLoadBalancerPolicies",
-                "elasticloadbalancing:DescribeLoadBalancers",
-                "elasticloadbalancing:DescribeTargetGroupAttributes",
-                "elasticloadbalancing:DescribeTargetGroups",
-                "elasticloadbalancing:DescribeTargetHealth",
-                "elasticloadbalancing:DetachLoadBalancerFromSubnets",
-                "elasticloadbalancing:ModifyListener",
-                "elasticloadbalancing:ModifyLoadBalancerAttributes",
-                "elasticloadbalancing:ModifyTargetGroup",
-                "elasticloadbalancing:ModifyTargetGroupAttributes",
-                "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
-                "elasticloadbalancing:RegisterTargets",
-                "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
-                "elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
-                "kms:DescribeKey"
+                "autoscaling:*",
+                "ec2:*",
+                "elasticloadbalancing:*"
             ],
             "Resource": "*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": "iam:CreateServiceLinkedRole",
-            "Resource": "*",
-            "Condition": {
-                "StringEquals": {
-                    "iam:AWSServiceName": "elasticloadbalancing.amazonaws.com"
-                }
-            }
         }
     ]
 }
@@ -155,25 +89,29 @@ EOF
 resource "random_uuid" "random_cluster_id" {}
 
 module "masters_instance_profile" {
-  source = "./modules/instance-profile"
-  iam_policy = local.iam_policy
+  count         = var.masters_instance_profile == null ? 1 : 0
+  source        = "./modules/instance-profile"
+  iam_policy    = local.iam_policy
   iam_role_name = "${var.environment}-masters-role"
-  name = "${var.environment}-masters-instance-profile"
+  name          = "${var.environment}-masters-instance-profile"
+}
+
+locals {
+  masters_instance_profile = var.masters_instance_profile != null ? var.masters_instance_profile : module.masters_instance_profile[0].instance_profile_name
 }
 
 module "masters_asg" {
-  count              = var.masters_count
   source             = "./modules/asg"
   group_name         = "${var.cluster_name}-master"
   image_id           = var.rke2_ami_id
   instance_type      = var.master_instance_type
-  instance_profile   = module.masters_instance_profile.instance_profile_name
+  instance_profile   = local.masters_instance_profile
   key_pair_name      = var.master_key_pair
   rke_cni            = var.k8s_cni
-  rke_masters_lb_url     = local.lb_url
+  rke_masters_lb_url = local.lb_url
   rke_token          = random_uuid.random_cluster_id.result
   rke_san            = local.rke_san
-  api_url            = var.zcompute_api
+  api_url            = var.zcompute_private_api != null ? var.zcompute_private_api : var.zcompute_public_api
   is_agent           = false
   taint_servers      = var.taint_masters
   security_groups    = var.security_groups_ids

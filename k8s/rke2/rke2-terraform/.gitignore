@@ -29,3 +29,5 @@ terraform.rc
 
 .terraform
 *.tfstate*
+backend.tf
+.states

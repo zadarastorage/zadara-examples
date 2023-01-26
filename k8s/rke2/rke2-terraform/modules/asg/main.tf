@@ -45,7 +45,7 @@ resource "aws_launch_configuration" "rke" {
   }
 
   lifecycle {
-    ignore_changes        = [metadata_options]
+    ignore_changes        = [metadata_options, root_block_device]
     create_before_destroy = true
   }
 }
