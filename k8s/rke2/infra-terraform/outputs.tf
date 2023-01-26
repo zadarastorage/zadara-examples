@@ -1,11 +1,3 @@
-output "test_ip" {
-  value = aws_eip.test-eip.public_ip
-}
-
-output "test_dns" {
-  value = aws_eip.test-eip.public_dns
-}
-
 output "vpc_id" {
   value = aws_vpc.rke2_vpc.id
 }
