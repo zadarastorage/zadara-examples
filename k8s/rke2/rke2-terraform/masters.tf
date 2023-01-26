@@ -88,16 +88,17 @@ EOF
 
 resource "random_uuid" "random_cluster_id" {}
 
-module "masters_instance_profile" {
-  count         = var.masters_instance_profile == null ? 1 : 0
-  source        = "./modules/instance-profile"
-  iam_policy    = local.iam_policy
-  iam_role_name = "${var.environment}-masters-role"
-  name          = "${var.environment}-masters-instance-profile"
+module "master_instance_profile" {
+  count             = var.master_instance_profile == null ? 1 : 0
+  source            = "./modules/instance-profile"
+  iam_policy        = local.iam_policy
+  iam_role_name     = var.master_iam_role == null ? "${var.environment}-masters-role" : var.master_iam_role
+  use_existing_role = var.master_iam_role != null
+  name              = "${var.environment}-masters-instance-profile"
 }
 
 locals {
-  masters_instance_profile = var.masters_instance_profile != null ? var.masters_instance_profile : module.masters_instance_profile[0].instance_profile_name
+  masters_instance_profile = var.master_instance_profile != null ? var.master_instance_profile : module.master_instance_profile[0].instance_profile_name
 }
 
 module "masters_asg" {

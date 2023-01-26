@@ -1,13 +1,14 @@
-module "workers_instance_profile" {
-  count         = var.workers_instance_profile == null ? 1 : 0
-  source        = "./modules/instance-profile"
-  iam_policy    = local.iam_policy
-  iam_role_name = "${var.environment}-workers-role"
-  name          = "${var.environment}-workers-instance-profile"
+module "worker_instance_profile" {
+  count             = var.worker_instance_profile == null ? 1 : 0
+  source            = "./modules/instance-profile"
+  iam_policy        = local.iam_policy
+  iam_role_name     = var.worker_iam_role == null ? "${var.environment}-workers-role" : var.worker_iam_role
+  use_existing_role = var.worker_iam_role != null
+  name              = "${var.environment}-workers-instance-profile"
 }
 
 locals {
-  workers_instance_profile = var.workers_instance_profile != null ? var.workers_instance_profile : module.workers_instance_profile[0].instance_profile_name
+  workers_instance_profile = var.worker_instance_profile != null ? var.worker_instance_profile : module.worker_instance_profile[0].instance_profile_name
 }
 
 module "workers_asg" {

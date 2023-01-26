@@ -13,7 +13,7 @@ variable "iam_policy" {
   type = string
 }
 
-variable "existing_role" {
+variable "use_existing_role" {
   description = "Use existing IAM role"
   type = bool
   default = false

@@ -124,14 +124,26 @@ variable "cluster_access_secret_id" {
   sensitive = true
 }
 
-variable "masters_instance_profile" {
+variable "master_instance_profile" {
   type        = string
-  description = "instance profile id, if not provided will be created by tf, be aware requires advanced IAM permissions"
+  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
   default     = null
 }
 
-variable "workers_instance_profile" {
+variable "master_iam_role" {
   type        = string
-  description = "instance profile id, if not provided will be created by tf, be aware requires advanced IAM permissions"
+  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
+  default     = null
+}
+
+variable "worker_instance_profile" {
+  type        = string
+  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
+  default     = null
+}
+
+variable "worker_iam_role" {
+  type        = string
+  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
   default     = null
 }

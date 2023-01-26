@@ -4,6 +4,10 @@ terraform {
       version = "~> 3.33.0"
       source  = "hashicorp/aws"
     }
+    ssh = {
+      source = "loafoe/ssh"
+      version = "2.3.0"
+    }
   }
 }
 

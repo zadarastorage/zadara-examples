@@ -1,5 +1,7 @@
 locals {
   nlb_id = var.expose_k8s_api_publicly ? aws_lb.rke2_masters_public[0].id : aws_lb.rke2_masters_private[0].id
+  nlb_private_dns = "elb-${local.nlb_id}.${var.dhcp_options_domain_name}"
+  nlb_public_dns = var.expose_k8s_api_publicly ? aws_lb.rke2_masters_public[0].dns_name : aws_lb.rke2_masters_private[0].dns_name
 }
 
 resource "aws_lb" "rke2_masters_private" {

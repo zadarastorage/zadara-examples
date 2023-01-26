@@ -1,4 +1,4 @@
-zcompute_api             = ""
+zcompute_public_api             = ""
 cluster_access_key       = ""
 cluster_access_secret_id = ""
 
