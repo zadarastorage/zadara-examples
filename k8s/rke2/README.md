@@ -85,9 +85,9 @@ run the packer command using:`packer build -only=source.qemu.centos .`
 ## Step 3: Automated RKE2 deployment (Terraform)
 
 * Open the AWS CLI and create an instance-profile for the masters and/or workers via the below command: \
-  <code>aws iam create-instance-profile --instance-profile-name {name} </code>
+  <code>aws iam create-instance-profile --instance-profile-name {name} </code> \
   Alternatively you can create the instance-profile with SYMP: \
-  <code>symp instance-profile create {name} </code>  
+  <code>symp instance-profile create {name} </code>  \
   Make sure to save the instance-profile/s id/s and provide it to as a terraform variable
 * Go to the `rke2-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
