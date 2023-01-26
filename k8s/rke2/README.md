@@ -112,10 +112,13 @@ run the packer command using:`packer build -only=source.qemu.centos .`
     * Tag the existing private & public subnets for Load Balancer controller discovery
 * Due to current zCompute limitation, you will need to re-apply Terraform again in order to poplate tags (resource names, etc.)
 
-Once Terraform is over, you will need to get the kubeconfig file from one of the master node:
+Once Terraform is over, you will need to get the kubeconfig file from the first master node (see the [RKE2 documentation](https://docs.rke2.io/cluster_access)):
 * ssh into the bastion VM (using the bastion key-pair)
-* Upload the relevant master key-pair to the bastion `~/.ssh` folder and ssh into one of the master nodes
-* Copy the kubeconfig file from `/etc/rancher/rke2/rke2.yaml` to your local environment and use it to connect to the Kubernetes cluster
+* Upload the relevant master key-pair to the bastion `~/.ssh` folder and ssh into the first (oldest) master node
+* Copy the kubeconfig file from `/etc/rancher/rke2/rke2.yaml` to your local environment
+* Edit the kubeconfig file and replace the cluster server element with the NLB public IP (the same one used by Terraform)
+
+Use the kubeconfig to connect to the Kubernetes cluster :) 
 
 ## Step 4: Zadara Storage Class (optional)
 
