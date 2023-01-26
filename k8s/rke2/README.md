@@ -113,10 +113,12 @@ run the packer command using:`packer build -only=source.qemu.centos .`
 * Due to current zCompute limitation, you will need to re-apply Terraform again in order to poplate tags (resource names, etc.)
 
 Once Terraform is over, you will need to get the kubeconfig file from the first master node (see the [RKE2 documentation](https://docs.rke2.io/cluster_access)):
-* ssh into the bastion VM (using the bastion key-pair)
-* Upload the relevant master key-pair to the bastion `~/.ssh` folder and ssh into the first (oldest) master node
-* Copy the kubeconfig file from `/etc/rancher/rke2/rke2.yaml` to your local environment
-* Edit the kubeconfig file and replace the cluster server element with the NLB public IP (the same one used by Terraform)
+* Upload the relevant master key-pair to the bastion `~/.ssh` folder, for example: \
+  <code>scp -i .ssh/{bastion_pem} .ssh/{master_pem} centos@{bastion_ip}:/home/centos/.ssh/{master_pem}</code>
+* Copy the kubeconfig file from the master VM's `/etc/rancher/rke2/rke2.yaml` to your local environment, for example: \
+  <code>scp -i ~/.ssh/{bastion_pem} -J centos@{bastion_ip} centos@{master_ip}:/etc/rancher/rke2/rke2.yaml ~/.kube/config</code>
+* Edit the kubeconfig file and replace the cluster server element with the NLB public IP (the same one used by Terraform), for example: \
+  <code>sed 's/127.0.0.1/{NLB_public_ip}/g' ~/.kube/config</code>
 
 Use the kubeconfig to connect to the Kubernetes cluster :) 
 
