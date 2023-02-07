@@ -5,7 +5,7 @@ variable "group_name" {
 
 variable "volume_type" {
   type        = string
-  default     = "gp2"
+  default     = "default"
   description = ""
 }
 

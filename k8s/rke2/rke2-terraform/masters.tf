@@ -103,7 +103,7 @@ locals {
 
 module "masters_asg" {
   source             = "./modules/asg"
-  group_name         = "${var.cluster_name}-master"
+  group_name         = "${var.environment}-master"
   image_id           = var.rke2_ami_id
   instance_type      = var.master_instance_type
   instance_profile   = local.masters_instance_profile

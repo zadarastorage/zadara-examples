@@ -9,7 +9,7 @@ resource "aws_ec2_tag" "private" {
 resource "aws_ec2_tag" "private_shared" {
   count = length(var.private_subnets_ids)
 
-  key         = "kubernetes.io/cluster/rke2"
+  key         = "kubernetes.io/cluster/${var.cluster_name}"
   value       = "shared"
   resource_id = var.private_subnets_ids[count.index]
 }

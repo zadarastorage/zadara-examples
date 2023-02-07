@@ -13,7 +13,7 @@ locals {
 
 module "workers_asg" {
   source             = "./modules/asg"
-  group_name         = "${var.cluster_name}-worker"
+  group_name         = "${var.environment}-worker"
   image_id           = var.rke2_ami_id
   instance_type      = var.worker_instance_type
   instance_profile   = local.workers_instance_profile
