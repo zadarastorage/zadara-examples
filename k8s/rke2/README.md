@@ -1,20 +1,20 @@
 # RKE2 deployment setup
 
-Clone this repository 
+Below is an example (not OOTB production-grade solution) for an RKE2 deployment over zCompute
 
 ## Prerequisites: zCompute
 
 * Storage
     * Add a "default" alias for the default storage pool (required for Terraform's volume type in step 3 - you can change this later)
 * Network:
-    * Networking Service Engine VPC_NATGW must be enabled
+    * Networking Service Engine VPC_NATGW must be enabled (usually already on for customer clouds)
 * Images
     * CentOS 7 image should be imported from the Marketplace to be used for the Bastion VM - you will need to provide Terraform with its AMI (AWS ID)
 * Credentials:
     * Key-pair for the bastion server - you will need to provide Terraform with the key-pair name
     * Key-Pair for the master servers (can be the same) - you will need to provide Terraform with the key-pair name
     * Key-Pair for the worker agents (can be the same) - you will need to provide Terraform with the key-pair name
-    * AWS programmatic credentials with tenant-admin & AWS MemberFullAccess permissions for the relevant (not default) project - you will need to provide Terraform/Packer with the access key & secret id
+    * AWS programmatic credentials with tenant-admin & AWS MemberFullAccess + IAMFullAccess permissions for the relevant (not default) project - you will need to provide Terraform/Packer with the access key & secret id
 
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
@@ -31,14 +31,14 @@ Clone this repository
     * Private subnet for the Kubernetes nodes VMs
     * Routing tables to accomodate public/private subnets
     * Default Security Group for the VPC as well as RKE2-related one (based on the SG itself)
-    * Bastion VM on the public subnet (accessible to the world) with access to the private subnet (where the Kubernetes nodes will be located)
+    * Bastion VM on the public subnet (**accessible to the world by default**) with access to the private subnet (where the Kubernetes nodes will be located)
     * Network Load Balancer to hold the Kubernetes API Server endpoints - accessible to the world by default, can be hardened for Bastion-only access if you add the variable `expose_k8s_api_publicly = false`
     * Elastic IPs for the Bastion as well as the Network Load Balancer
 * `terraform apply --auto-approve` - this will make the actual changes on the environment
 * Due to current zCompute limitation, you will need to re-apply Terraform again in order to populate tags (resource names, etc.)
-* Note that the subnets' MTU must match the edge network MTU - if there's a mismatch you should adjust the subnet MTU accordingly
+* Note that the subnets' MTU must match the edge network MTU - if there's a mismatch you should adjust both private & public subnets MTUs accordingly via zCompute GUI before step #3
 * Terraform will output the relevant information required for step #3 - if you lose track of them you can always run `terraform output` to list them again
-* In addition you will also be required to provide the NLB's id, private & public IPs and internal DNS name (you can get those from the GUI)
+* In addition you will also be required to provide the NLB's private & public IPs (you can get those from the GUI)
 
 
 ## Step 2: RKE2 image (Packer)
@@ -46,7 +46,7 @@ Clone this repository
     * You can import the RKE2 1.23.4 image directly from the zCompute GUI
         * On the `images` module, click on `create`
         * Name your image and select the right project/scope
-        * Select to create image from URL and use this address: `https://confimage1.s3.amazonaws.com/centos-7.8-rke2-v1.23.4-rke2r1.qcow2`
+        * Select to create image from URL and use this address: `https://vsa-00000029-public-il-interoplab-01.zadarazios.com/v1/AUTH_c92d27b5fb4b4f58b4b93c267fa0f9bc/images/volume_rke2-centos-1675162676.disk1.qcow2`
     * If you wish to create your own image (and control the exact RKE2 version, etc.)
         * Make sure you have appropriate (admin-level) permissions
         * Go to the packer directory
@@ -153,8 +153,6 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
   ```yaml
   clusterName:  # cluster name
   vpcId: # cluster's vpc id
-  image:
-    repository: amazon/aws-alb-ingress-controller
   awsApiEndpoints: "ec2=https://<cluster_hostname>/api/v2/aws/ec2,elasticloadbalancing=https://<cluster_hostname>/api/v2/aws/elbv2,acm=https://<cluster_hostname>/api/v2/aws/acm,sts=https://<cluster_hostname>/api/v2/aws/sts"
   enableShield: false
   enableWaf: false
