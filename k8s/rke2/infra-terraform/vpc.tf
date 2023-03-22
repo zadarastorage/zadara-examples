@@ -50,7 +50,7 @@ resource "aws_nat_gateway" "rke2" {
     Name = "${var.environment}-vpc-ngw"
   }
 
-  depends_on = [aws_route.igw]
+  depends_on = [aws_route.igw, aws_route_table_association.public_to_public]
 }
 
 resource "aws_subnet" "rke2_public" {
