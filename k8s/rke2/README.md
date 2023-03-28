@@ -131,7 +131,7 @@ Once Terraform is over, you will need to get the kubeconfig file from the first 
 
 Use the kubeconfig to connect to the Kubernetes cluster :) 
 
-## Step 4: Zadara Storage Class (optional)
+## Step 4: Zadara Storage CSI (optional)
 
 * Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
 * Requires a dedicated VPSA with one pool and a write-enabled user token (access key) - you will need to provide the key to the Zadara CSI Storage Class configuration
@@ -167,7 +167,7 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
   ```
 * Deploy the controller: \
   <code>helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -f values.yaml -n kube-system</code>
-* Deploy your ingress controller (for example, nginx) and configure it with the following:
+* Make sure to add the following annotations to the ingress service (also applies to other controllers such as nginx, etc.):
   ```yaml
   service:
     annotations:
@@ -175,7 +175,9 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
       service.beta.kubernetes.io/aws-load-balancer-type: external
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
   ```
-  The AWS Load Balancer Controller documentation, including specific annotations can be found here:
+* Remember that in order to create an internet-facing ingress you will have to set the `alb.ingress.kubernetes.io/scheme` annotation to `internet-facing` (as the default value is `internal`) on the ingress level
+
+  The full AWS Load Balancer Controller documentation, including specific annotations can be found here:
   * [Ingress](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/ingress/annotations)
   * [Service](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
 
