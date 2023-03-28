@@ -183,6 +183,9 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
 
 ## Step 6: Cluster auto-scaler (optional)
 * Only relevant if you wish to enable the Kubernetes [cluster autoscaler](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md) and dynamically control your worker nodes scaling
-* Deploy [cluster-autoscaler](https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler)
-* Configure cluster-autoscaler with [AWS credentials](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#using-aws-credentials) (zCompute doesn't support IAM roles for Service Accounts)
-* Define the workers ASG and the lower/upper bounds
+* Add the [cluster-autoscaler](https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler) Helm repo: \
+  <code>helm repo add autoscaler https://kubernetes.github.io/autoscaler</code>
+* Configure cluster-autoscaler on AWS per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#cluster-autoscaler-on-aws) - note the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) will require you to add the relevant tags on the relevant ASG/s (either from zCompute GUI, AWS CLI or Symp)
+* You will be required to provide  the relevant [AWS credentials](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-aws-credentials) as values (see [example](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/values-cloudconfig-example.yaml)) as zCompute doesn't support OIDC like EKS does
+* Create the cloud config ConfigMap per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-cloud-config-with-helm) - make sure to list the URL endpoints as mentioned on the [example file](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/configmap-cloudconfig-example.yaml) (you can pick any region as long as the URL points to your zCompute cluster's URL)
+* If you didn't opt for the auto-discovery mode - emember to define the specific workers ASG/s and its lower/upper bounds
