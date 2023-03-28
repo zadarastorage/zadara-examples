@@ -140,11 +140,11 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
   <code>helm repo add zadara-csi https://raw.githubusercontent.com/zadarastorage/zadara-csi/release/zadara-csi-helm</code>
 * Deploy the chart - note you may want to disable TLS verification for internal VPSAs, for example: \
   <code>helm upgrade --install zadara-csi zadara-csi/zadara-csi --set vpsa.verifyTLS=false</code>
-* Follow the post-deployment Helm note for the CRDs definitions:
+* Follow the post-deployment Helm notes for the CRDs definitions:
     * [VSCStorageClass](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vscstorageclass.yaml) configuration (see full documentation [here](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_vsc.md))
     * [VPSA](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vpsa.yaml) configuration (there goes the VPSA address & the user's token)
 * Deploy a [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_storage.md) which will point to the VSCStorageClass (you might want to set it as the default storage class for simplicity)
-* Further examples/references can be found [here](https://github.com/zadarastorage/zadara-csi/tree/release/deploy/examples)
+* Further CSI examples (like how to create a block/filesystem PVC, etc.) can be found [here](https://github.com/zadarastorage/zadara-csi/tree/release/deploy/examples)
 
 
 ## Step 5: AWS Load Balancer controller (optional)
