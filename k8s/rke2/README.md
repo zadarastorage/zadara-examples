@@ -19,6 +19,7 @@ Below is an example (not OOTB production-grade solution) for an RKE2 deployment 
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
+    * (optional) `environment` - prefix for the various resources to be created (defaults to "k8s")
     * `zcompute_api` - the URL/IP of the zCompute cluster
     * `cluster_access_key` - the tenant admin access key
     * `cluster_access_secret_id` - the tenant admin secret key
@@ -94,7 +95,7 @@ run the packer command using:`packer build -only=source.qemu.centos .`
 
 * Go to the `rke2-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
-    * `environment` - the prefix for VM names (defaults to "k8s")
+    * (optional) `environment` - cluster name & prefix for the various resources to be created (defaults to "k8s")
     * `cluster_access_key` - the admin access key
     * `cluster_access_secret_id` - the admin secret key
     * `zcompute_api` - the URL/IP of the zCompute cluster
@@ -151,7 +152,7 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
   <code>helm repo add eks [https://aws.github.io/eks-charts](https://aws.github.io/eks-charts)</code>
 * Create value file named <code>values.yaml</code> according to the below specification (remember to update the cluster's hostname with the zCompute URL):
   ```yaml
-  clusterName:  # cluster name
+  clusterName:  # cluster name (terraform's environment variable)
   vpcId: # cluster's vpc id
   awsApiEndpoints: "ec2=https://<cluster_hostname>/api/v2/aws/ec2,elasticloadbalancing=https://<cluster_hostname>/api/v2/aws/elbv2,acm=https://<cluster_hostname>/api/v2/aws/acm,sts=https://<cluster_hostname>/api/v2/aws/sts"
   enableShield: false
