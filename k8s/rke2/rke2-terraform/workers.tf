@@ -21,7 +21,7 @@ module "workers_asg" {
   rke_cni            = var.k8s_cni
   rke_masters_lb_url = local.lb_url
   rke_token          = random_uuid.random_cluster_id.result
-  api_url            = var.zcompute_private_api != null ? var.zcompute_private_api : var.zcompute_public_api
+  api_url            = var.zcompute_private_api != null ? var.zcompute_private_api : var.zcompute_api
   is_agent           = true
   security_groups    = var.security_groups_ids
   subnet_ids         = var.private_subnets_ids

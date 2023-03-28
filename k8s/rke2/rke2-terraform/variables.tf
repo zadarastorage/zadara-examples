@@ -1,9 +1,9 @@
 variable "environment" {
-  description = "Label to be used for tags and resource names for identification"
+  description = "Cluster name label to be used in tags, as well as a prefix for various resource names (for example prevent IAM resources overlap)"
   default     = "k8s"
 }
 
-variable "zcompute_public_api" {
+variable "zcompute_api" {
   type        = string
   description = "IP/DNS of the zCompute cluster API endpoint"
 }
@@ -121,24 +121,24 @@ variable "cluster_access_secret_id" {
 
 variable "master_instance_profile" {
   type        = string
-  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
+  description = "if not provided will be created by tf, be aware requires IAMFullAccess permission"
   default     = null
 }
 
 variable "master_iam_role" {
   type        = string
-  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
+  description = "if not provided will be created by tf, be aware requires IAMFullAccess permission"
   default     = null
 }
 
 variable "worker_instance_profile" {
   type        = string
-  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
+  description = "if not provided will be created by tf, be aware requires IAMFullAccess permission"
   default     = null
 }
 
 variable "worker_iam_role" {
   type        = string
-  description = "if not provided will be created by tf, be aware requires advanced IAM permissions"
+  description = "if not provided will be created by tf, be aware requires IAMFullAccess permission"
   default     = null
 }

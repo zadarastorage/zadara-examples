@@ -112,7 +112,7 @@ module "masters_asg" {
   rke_masters_lb_url = local.lb_url
   rke_token          = random_uuid.random_cluster_id.result
   rke_san            = local.rke_san
-  api_url            = var.zcompute_private_api != null ? var.zcompute_private_api : var.zcompute_public_api
+  api_url            = var.zcompute_private_api != null ? var.zcompute_private_api : var.zcompute_api
   is_agent           = false
   taint_servers      = var.taint_masters
   security_groups    = var.security_groups_ids
