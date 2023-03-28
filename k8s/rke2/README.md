@@ -138,7 +138,7 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
 * Make sure routing is in place and Security Group allows communication between the private subnet and the VPSA
 * Add the [Zadara CSI](https://github.com/zadarastorage/zadara-csi) Helm repo: \
   <code>helm repo add zadara-csi https://raw.githubusercontent.com/zadarastorage/zadara-csi/release/zadara-csi-helm</code>
-* Deploy the chart - note you may want to disable TLS verification for internal VPSAs, for example: \
+* Deploy the CSI driver chart - see values [here](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/helm/zadara-csi/values.yaml) and note you may want to disable TLS verification for internal VPSAs, for example: \
   <code>helm upgrade --install zadara-csi zadara-csi/zadara-csi --set vpsa.verifyTLS=false</code>
 * Follow the post-deployment Helm notes for the CRDs definitions:
     * [VSCStorageClass](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vscstorageclass.yaml) configuration (see full documentation [here](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_vsc.md))
