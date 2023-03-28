@@ -134,15 +134,17 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
 ## Step 4: Zadara Storage Class (optional)
 
 * Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
-* Requires a dedicated VPSA with 1 pool and programmatic credentials (access key) - you will need to provide the access key to the Zadara CSI Storage Class configuration
+* Requires a dedicated VPSA with one pool and a write-enabled user token (access key) - you will need to provide the key to the Zadara CSI Storage Class configuration
 * Make sure routing is in place and Security Group allows communication between the private subnet and the VPSA
-* Deploy the Zadara CSI V2
-    * Clone the [zadara-csi](https://github.com/zadarastorage/zadara-csi) repository
-    * Checkout the master branch and get the chart: \
-      https://github.com/zadarastorage/zadara-csi/tree/master/deploy/helm/zadara-csi
-* Note the post deployment Helm notification for the CRDs definitions:
-    * Follow the Zadara CSI documentation to configure [VSC](https://github.com/zadarastorage/zadara-csi/blob/master/docs/configuring_vsc.md) (with the VPSA hostname/IP and access key) 
-    * Follow the Zadara CSI documentation to configure [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/master/docs/configuring_storage.md)
+* Add the [Zadara CSI](https://github.com/zadarastorage/zadara-csi) Helm repo: \
+  <code>helm repo add zadara-csi https://raw.githubusercontent.com/zadarastorage/zadara-csi/release/zadara-csi-helm</code>
+* Deploy the chart - note you may want to disable TLS verification for internal VPSAs, for example: \
+  <code>helm upgrade --install zadara-csi zadara-csi/zadara-csi --set vpsa.verifyTLS=false</code>
+* Follow the post-deployment Helm note for the CRDs definitions:
+    * [VSCStorageClass](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vscstorageclass.yaml) configuration (see full documentation [here](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_vsc.md))
+    * [VPSA](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vpsa.yaml) configuration (there goes the VPSA address & the user's token)
+* Deploy a [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_storage.md) which will point to the VSCStorageClass (you might want to set it as the default storage class for simplicity)
+* Further examples/references can be found [here](https://github.com/zadarastorage/zadara-csi/tree/release/deploy/examples)
 
 
 ## Step 5: AWS Load Balancer controller (optional)
@@ -150,9 +152,9 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
 * Only relevant if you wish to use the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) for ingress controller
 * Add the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/tree/main/helm/aws-load-balancer-controller) Helm repo: \
   <code>helm repo add eks [https://aws.github.io/eks-charts](https://aws.github.io/eks-charts)</code>
-* Create value file named <code>values.yaml</code> according to the below specification (remember to update the cluster's hostname with the zCompute URL):
+* Create value file named <code>values.yaml</code> according to the below specification (remember to update all of the cluster's hostname parameters with the zCompute URL):
   ```yaml
-  clusterName:  # cluster name (terraform's environment variable)
+  clusterName:  # cluster name (terraform's "environment" variable from step #3)
   vpcId: # cluster's vpc id
   awsApiEndpoints: "ec2=https://<cluster_hostname>/api/v2/aws/ec2,elasticloadbalancing=https://<cluster_hostname>/api/v2/aws/elbv2,acm=https://<cluster_hostname>/api/v2/aws/acm,sts=https://<cluster_hostname>/api/v2/aws/sts"
   enableShield: false
