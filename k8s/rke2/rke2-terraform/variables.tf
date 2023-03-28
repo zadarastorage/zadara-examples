@@ -3,11 +3,6 @@ variable "environment" {
   default     = "k8s"
 }
 
-variable "cluster_name" {
-  description = "Label to be used for tags and resource names for identification"
-  default     = "default"
-}
-
 variable "zcompute_public_api" {
   type        = string
   description = "IP/DNS of the zCompute cluster API endpoint"
