@@ -19,6 +19,7 @@ Below is an example (not OOTB production-grade solution) for an RKE2 deployment 
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
+    * (optional) `environment` - prefix for the various resources to be created (defaults to "k8s")
     * `zcompute_api` - the URL/IP of the zCompute cluster
     * `cluster_access_key` - the tenant admin access key
     * `cluster_access_secret_id` - the tenant admin secret key
@@ -94,7 +95,7 @@ run the packer command using:`packer build -only=source.qemu.centos .`
 
 * Go to the `rke2-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
-    * `environment` - the prefix for VM names (defaults to "k8s")
+    * (optional) `environment` - cluster name & prefix for the various resources to be created (defaults to "k8s")
     * `cluster_access_key` - the admin access key
     * `cluster_access_secret_id` - the admin secret key
     * `zcompute_api` - the URL/IP of the zCompute cluster
@@ -130,18 +131,20 @@ Once Terraform is over, you will need to get the kubeconfig file from the first 
 
 Use the kubeconfig to connect to the Kubernetes cluster :) 
 
-## Step 4: Zadara Storage Class (optional)
+## Step 4: Zadara Storage CSI (optional)
 
 * Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
-* Requires a dedicated VPSA with 1 pool and programmatic credentials (access key) - you will need to provide the access key to the Zadara CSI Storage Class configuration
+* Requires a dedicated VPSA with one pool and a write-enabled user token (access key) - you will need to provide the key to the Zadara CSI Storage Class configuration
 * Make sure routing is in place and Security Group allows communication between the private subnet and the VPSA
-* Deploy the Zadara CSI V2
-    * Clone the [zadara-csi](https://github.com/zadarastorage/zadara-csi) repository
-    * Checkout the master branch and get the chart: \
-      https://github.com/zadarastorage/zadara-csi/tree/master/deploy/helm/zadara-csi
-* Note the post deployment Helm notification for the CRDs definitions:
-    * Follow the Zadara CSI documentation to configure [VSC](https://github.com/zadarastorage/zadara-csi/blob/master/docs/configuring_vsc.md) (with the VPSA hostname/IP and access key) 
-    * Follow the Zadara CSI documentation to configure [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/master/docs/configuring_storage.md)
+* Add the [Zadara CSI](https://github.com/zadarastorage/zadara-csi) Helm repo: \
+  <code>helm repo add zadara-csi https://raw.githubusercontent.com/zadarastorage/zadara-csi/release/zadara-csi-helm</code>
+* Deploy the CSI driver chart - see values [here](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/helm/zadara-csi/values.yaml) and note you may want to disable TLS verification for internal VPSAs, for example: \
+  <code>helm upgrade --install zadara-csi zadara-csi/zadara-csi --set vpsa.verifyTLS=false</code>
+* Follow the post-deployment Helm notes for the CRDs definitions:
+    * [VSCStorageClass](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vscstorageclass.yaml) configuration (see full documentation [here](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_vsc.md))
+    * [VPSA](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vpsa.yaml) configuration (there goes the VPSA address & the user's token)
+* Deploy a [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_storage.md) which will point to the VSCStorageClass (you might want to set it as the default storage class for simplicity)
+* Further CSI examples (like how to create a block/filesystem PVC, etc.) can be found [here](https://github.com/zadarastorage/zadara-csi/tree/release/deploy/examples)
 
 
 ## Step 5: AWS Load Balancer controller (optional)
@@ -149,9 +152,9 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
 * Only relevant if you wish to use the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) for ingress controller
 * Add the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/tree/main/helm/aws-load-balancer-controller) Helm repo: \
   <code>helm repo add eks [https://aws.github.io/eks-charts](https://aws.github.io/eks-charts)</code>
-* Create value file named <code>values.yaml</code> according to the below specification (remember to update the cluster's hostname with the zCompute URL):
+* Create value file named <code>values.yaml</code> according to the below specification (remember to update all of the cluster's hostname parameters with the zCompute URL):
   ```yaml
-  clusterName:  # cluster name
+  clusterName:  # cluster name (terraform's "environment" variable from step #3)
   vpcId: # cluster's vpc id
   awsApiEndpoints: "ec2=https://<cluster_hostname>/api/v2/aws/ec2,elasticloadbalancing=https://<cluster_hostname>/api/v2/aws/elbv2,acm=https://<cluster_hostname>/api/v2/aws/acm,sts=https://<cluster_hostname>/api/v2/aws/sts"
   enableShield: false
@@ -164,7 +167,7 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
   ```
 * Deploy the controller: \
   <code>helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -f values.yaml -n kube-system</code>
-* Deploy your ingress controller (for example, nginx) and configure it with the following:
+* Make sure to add the following annotations to the ingress service (also applies to other controllers such as nginx, etc.):
   ```yaml
   service:
     annotations:
@@ -172,12 +175,17 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
       service.beta.kubernetes.io/aws-load-balancer-type: external
       service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
   ```
-  The AWS Load Balancer Controller documentation, including specific annotations can be found here:
+* Remember that in order to create an internet-facing ingress you will have to set the `alb.ingress.kubernetes.io/scheme` annotation to `internet-facing` (as the default value is `internal`) on the ingress level
+
+  The full AWS Load Balancer Controller documentation, including specific annotations can be found here:
   * [Ingress](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/ingress/annotations)
   * [Service](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
 
 ## Step 6: Cluster auto-scaler (optional)
 * Only relevant if you wish to enable the Kubernetes [cluster autoscaler](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md) and dynamically control your worker nodes scaling
-* Deploy [cluster-autoscaler](https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler)
-* Configure cluster-autoscaler with [AWS credentials](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#using-aws-credentials) (zCompute doesn't support IAM roles for Service Accounts)
-* Define the workers ASG and the lower/upper bounds
+* Add the [cluster-autoscaler](https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler) Helm repo: \
+  <code>helm repo add autoscaler https://kubernetes.github.io/autoscaler</code>
+* Configure cluster-autoscaler on AWS per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#cluster-autoscaler-on-aws) - note the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) will require you to add the relevant tags on the relevant ASG/s (either from zCompute GUI, AWS CLI or Symp)
+* You will be required to provide  the relevant [AWS credentials](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-aws-credentials) as values (see [example](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/values-cloudconfig-example.yaml)) as zCompute doesn't support OIDC like EKS does
+* Create the cloud config ConfigMap per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-cloud-config-with-helm) - make sure to list the URL endpoints as mentioned on the [example file](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/configmap-cloudconfig-example.yaml) (you can pick any region as long as the URL points to your zCompute cluster's URL)
+* If you didn't opt for the auto-discovery mode - emember to define the specific workers ASG/s and its lower/upper bounds

@@ -1,4 +1,4 @@
-zcompute_public_api             = ""
+zcompute_api             = ""
 cluster_access_key       = ""
 cluster_access_secret_id = ""
 
@@ -15,11 +15,13 @@ master_load_balancer_id           = ""
 master_load_balancer_public_ip    = ""
 master_load_balancer_private_ip   = ""
 master_load_balancer_internal_dns = ""
-master_volume_size                = "250"
+
 masters_count                     = 3 # recommended (1, 3, 5)
+workers_count                     = 0
+
 master_key_pair                   = ""
+worker_key_pair                   = ""
 
-worker_key_pair    = ""
-worker_volume_size = "250"
+master_volume_size                = "100"
+worker_volume_size                = "250"
 
-workers_count = 0
