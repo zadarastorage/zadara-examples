@@ -131,7 +131,7 @@ Once Terraform is over, you will need to get the kubeconfig file from the first 
 
 Use the kubeconfig to connect to the Kubernetes cluster :) 
 
-## Step 4: Zadara Storage CSI (optional)
+## Step 4: Zadara CSI (optional)
 
 * Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
 * Requires a dedicated VPSA with one pool and a write-enabled user token (access key) - you will need to provide the key to the Zadara CSI Storage Class configuration
@@ -167,25 +167,62 @@ Use the kubeconfig to connect to the Kubernetes cluster :)
   ```
 * Deploy the controller: \
   <code>helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -f values.yaml -n kube-system</code>
-* Make sure to add the following annotations to the ingress service (also applies to other controllers such as nginx, etc.):
-  ```yaml
-  service:
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-      service.beta.kubernetes.io/aws-load-balancer-type: external
-      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-  ```
-* Remember that in order to create an internet-facing ingress you will have to set the `alb.ingress.kubernetes.io/scheme` annotation to `internet-facing` (as the default value is `internal`) on the ingress level
+* For NLB - use the LoadBalancer service per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
+  * Make sure to add the following annotations to the service - the first two are mandatory in order for the controller to function, and the third is only required for internet-facing NLB (as the default is internal):
+    ```yaml
+    service:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+        service.beta.kubernetes.io/aws-load-balancer-type: external
+        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    ```
+  * As a [known limitation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/nlb/#security-group), the controller wouldn't create the relevant security group to the NLB - rather, it will add the relevant rules to the worker node's security group and you can attach this (or another) security group to the NLB via the zCompute GUI, AWS CLI or Symp
+* For ALB - use the Ingress resource per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/ingress/annotations)
+  * Set the `ingressClassName` attribute per the controller class name (default is `alb`) 
+  * By default all Ingress resources are [internal-facing](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/ingress/annotations/#scheme) - if you want your ALB to get a public IP you will have to set the `alb.ingress.kubernetes.io/scheme` annotation to `internet-facing` (default value is `internal`)
 
-  The full AWS Load Balancer Controller documentation, including specific annotations can be found here:
-  * [Ingress](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/ingress/annotations)
-  * [Service](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
 
 ## Step 6: Cluster auto-scaler (optional)
 * Only relevant if you wish to enable the Kubernetes [cluster autoscaler](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md) and dynamically control your worker nodes scaling
 * Add the [cluster-autoscaler](https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler) Helm repo: \
   <code>helm repo add autoscaler https://kubernetes.github.io/autoscaler</code>
-* Configure cluster-autoscaler on AWS per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#cluster-autoscaler-on-aws) - note the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) will require you to add the relevant tags on the relevant ASG/s (either from zCompute GUI, AWS CLI or Symp)
-* You will be required to provide  the relevant [AWS credentials](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-aws-credentials) as values (see [example](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/values-cloudconfig-example.yaml)) as zCompute doesn't support OIDC like EKS does
-* Create the cloud config ConfigMap per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-cloud-config-with-helm) - make sure to list the URL endpoints as mentioned on the [example file](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/configmap-cloudconfig-example.yaml) (you can pick any region as long as the URL points to your zCompute cluster's URL)
-* If you didn't opt for the auto-discovery mode - emember to define the specific workers ASG/s and its lower/upper bounds
+* Make sure you use the latest cluster-autoscaler release (zCompute support was introduced in 1.26.0 but 1.24.0 is still the default image tag on the chart)
+* Configure cluster-autoscaler for AWS per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#cluster-autoscaler-on-aws)
+  * The default `cloudProvider` value is `aws` so no need to change that
+  * If you opt to use the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) - remember to add the relevant tags on the relevant ASG/s (either from zCompute GUI, AWS CLI or Symp) - the default ones are `k8s.io/cluster-autoscaler/enabled` and `k8s.io/cluster-autoscaler/<cluster-name>` where cluster-name is the environment variable set on the rke2-terraform project
+  * If you opt to use the [manual mode](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#manual-configuration)  - remember to define the specific workers ASG/s name/s and their lower/upper bounds on the [autoscalingGroups](https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml#L39) values
+  * You can implicitly let cluster-autoscaler use the worker node's instance profile (it was set by Terraform and has the relevant permissions) or you can explicitly provide it with a dedicated set of [AWS credentials](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-aws-credentials) as values (see [example](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/values-cloudconfig-example.yaml)) as zCompute doesn't support OIDC like EKS does
+* Create & deploy the cloud-config ConfigMap per the [documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-cloud-config-with-helm) - make sure to list the zCompute's AWS URL endpoints as mentioned on the [example file](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/examples/configmap-cloudconfig-example.yaml) (you can pick any region as long as the URL points to your zCompute cluster's URL), for example:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-config
+data:
+  cloud.conf: |
+    [Global]
+      Zone=us-east-1-az1
+    [ServiceOverride "ec2"]
+      Service=ec2
+      Region=us-east-1
+      URL=https://<zcompute_url>/api/v2/aws/ec2
+      SigningRegion=us-east-1
+    [ServiceOverride "autoscaling"]
+      Service=autoscaling
+      Region=us-east-1
+      URL=https://<zcompute_url>/api/v2/aws/autoscaling
+      SigningRegion=us-east-1
+```
+* Make sure your values refer to the cloud-config ConfigMap as mentioned on the [documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-cloud-config-with-helm):
+```yaml
+cloudConfigPath: config/cloud.conf
+
+extraVolumes:
+  - name: cloud-config
+    configMap:
+      name: cloud-config
+
+extraVolumeMounts:
+  - name: cloud-config
+    mountPath: config
+```
