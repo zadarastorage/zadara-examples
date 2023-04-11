@@ -135,7 +135,7 @@ module "masters_asg" {
       value = var.environment
     },
     {
-      key   = "kubernetes.io/cluster/${var.cluster_name}"
+      key   = "kubernetes.io/cluster/${var.environment}"
       value = "owned"
     }
   ]
