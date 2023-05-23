@@ -17,7 +17,7 @@ resource "aws_lb" "rke2_masters_private" {
     ManagedBy = "rke2 terraform"
   }
 
-  depends_on = [aws_route.igw]
+  depends_on = [aws_route.igw, aws_route_table_association.private_to_private]
 }
 
 resource "aws_lb" "rke2_masters_public" {
@@ -33,5 +33,5 @@ resource "aws_lb" "rke2_masters_public" {
     ManagedBy = "rke2 terraform"
   }
 
-  depends_on = [aws_route.igw]
+  depends_on = [aws_route.igw, aws_route_table_association.public_to_public]
 }
