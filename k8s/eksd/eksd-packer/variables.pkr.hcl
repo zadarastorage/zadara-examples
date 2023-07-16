@@ -13,7 +13,7 @@ variable "zcompute_api" {
 variable "ssh_username" {
   type        = string
   description = "The ssh username for the packer builder"
-  default = "centos"
+  default = "ubuntu"
 }
 
 variable "subnet_id" {

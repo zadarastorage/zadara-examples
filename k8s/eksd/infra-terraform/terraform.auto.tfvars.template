@@ -1,0 +1,5 @@
+zcompute_api = ""
+cluster_access_key = ""
+cluster_access_secret_id = ""
+bastion_key_name = ""
+bastion_ami = ""
