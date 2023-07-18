@@ -48,25 +48,35 @@ build {
     "source.amazon-ebs.ubuntu"
   ]
 
-  # Utilities 
+  # Initialization & kernel upgrade 
   provisioner "shell" {
+    environment_vars = [
+      "DEBIAN_FRONTEND=noninteractive",
+      "NEEDRESTART_MODE=a"
+    ]
     inline = [
       "sudo cloud-init status --wait",
       "echo set debconf to Noninteractive",
       "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
       "sudo apt-get update",
-      "sudo apt-get install unzip -y",
-      "sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64",
-      "sudo chmod a+x /usr/local/bin/yq",
-      "sudo curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o 'awscliv2.zip'",
-      "sudo unzip -o awscliv2.zip",
-      "sudo ./aws/install --update",
-      "sudo rm ./awscliv2.zip",
-      "sudo rm -rf ./aws"
+      "sudo apt-get dist-upgrade -y"
     ]
   }
 
-  # Container runtime
+  # Utilities (AWS CLI, Helm, yq)
+  provisioner "file" {
+    source      = "files/setup_utilities.sh"
+    destination = "/tmp/setup_utilities.sh"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo chmod +x /tmp/setup_utilities.sh",
+      "sudo /tmp/setup_utilities.sh",
+    ]
+  }
+
+  # Container runtime (containerd)
   provisioner "file" {
     source      = "files/setup_containerd.sh"
     destination = "/tmp/setup_containerd.sh"
@@ -79,46 +89,20 @@ build {
     ]
   }
 
-  # Kubernetes artifacts
+  # EKS-D artifacts (binaries & images)
+  provisioner "file" {
+    source      = "files/setup_eksd.sh"
+    destination = "/tmp/setup_eksd.sh"
+  }
+
   provisioner "shell" {
     inline = [
-      "echo set debconf to Noninteractive",
-      "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
-      "sudo apt-get update",
-      "sudo apt-get install -y apt-transport-https ca-certificates curl",
-      "curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg",
-      "echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt-get update",
-      "sudo apt-get install -y kubelet kubeadm kubectl",
-      "sudo apt-mark hold kubelet kubeadm kubectl",
+      "sudo chmod +x /tmp/setup_eksd.sh",
+      "sudo EKSD_K8S_VERSION=${var.eksd_k8s_version} EKSD_REVISION=${var.eksd_revision} /tmp/setup_eksd.sh",
     ]
   }
 
-  # EKS-D artifacts
-  provisioner "shell" {
-    inline = [
-      "sudo curl -L -o /tmp/manifest.yaml https://distro.eks.amazonaws.com/kubernetes-${var.eksd_k8s_version}/kubernetes-${var.eksd_k8s_version}-eks-${var.eksd_revision}.yaml",
-      "export KUBEADM=$(yq '.status.components.[].assets.[] | select(.name==\"bin/linux/amd64/kubeadm\") | .archive.uri' /tmp/manifest.yaml)",
-      "export KUBELET=$(yq '.status.components.[].assets.[] | select(.name==\"bin/linux/amd64/kubelet\") | .archive.uri' /tmp/manifest.yaml)",
-      "export KUBECTL=$(yq '.status.components.[].assets.[] | select(.name==\"bin/linux/amd64/kubectl\") | .archive.uri' /tmp/manifest.yaml)",
-      "export KUBE_VER=$(yq '.status.components.[] | select(.name==\"kubernetes\") | .gitTag' /tmp/manifest.yaml)-eks-${var.eksd_k8s_version}-${var.eksd_revision}",
-      "export COREDNS=$(yq '.status.components.[].assets.[] | select(.name==\"coredns-image\") | .image.uri' /tmp/manifest.yaml)",
-      "export ETCD=$(yq '.status.components.[].assets.[] | select(.name==\"etcd-image\") | .image.uri' /tmp/manifest.yaml)",
-      "sudo rm /usr/bin/kubelet /usr/bin/kubeadm /usr/bin/kubectl",
-      "sudo wget -O /usr/bin/kubeadm $KUBEADM",
-      "sudo wget -O /usr/bin/kubelet $KUBELET",
-      "sudo wget -O /usr/bin/kubectl $KUBECTL",
-      "sudo chmod +x /usr/bin/kubelet /usr/bin/kubeadm /usr/bin/kubectl",
-      "sudo systemctl enable kubelet",
-      # attempt to gather all artifacts will fail due to bad coredns & etcd naming convention (known issue) but relevant for other images
-      "sudo kubeadm config images pull --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version $KUBE_VER || true",
-      "sudo ctr --namespace k8s.io images pull $COREDNS",
-      "sudo ctr --namespace k8s.io images tag $COREDNS $${COREDNS%'-eks-${var.eksd_k8s_version}-${var.eksd_revision}'}",
-      "sudo ctr --namespace k8s.io images pull $ETCD",
-      "sudo ctr --namespace k8s.io images tag $ETCD $${ETCD%'-eks-${var.eksd_k8s_version}-${var.eksd_revision}'}-0",
-    ]
-  }
-
+  # Startup script (TODO) & cleanup
   provisioner "file" {
     source      = "files/start_eksd_node.sh"
     destination = "/tmp/start_eksd_node.sh"

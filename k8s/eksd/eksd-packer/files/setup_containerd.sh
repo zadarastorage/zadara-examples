@@ -1,5 +1,8 @@
 #!/bin/bash
 
+export NEEDRESTART_MODE=a
+export DEBIAN_FRONTEND=noninteractive
+
 # Prerequisites
 sudo cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay

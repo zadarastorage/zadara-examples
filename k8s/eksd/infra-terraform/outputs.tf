@@ -1,3 +1,7 @@
+output "evironment" {
+  value = var.environment
+}
+
 output "vpc_id" {
   value = aws_vpc.eksd_vpc.id
 }
@@ -10,7 +14,7 @@ output "private_subnet_id" {
   value = aws_subnet.eksd_private.id
 }
 
-output "security_groups_id" {
+output "security_group_id" {
   value = aws_security_group.eksd_k8s.id
 }
 
@@ -18,12 +22,8 @@ output "master_load_balancer_id" {
   value = local.nlb_id
 }
 
-output "master_load_balancer_internal_dns" {
+output "masters_load_balancer_internal_dns" {
   value = local.nlb_private_dns
-}
-
-output "master_load_balancer_external_dns" {
-  value = local.nlb_public_dns
 }
 
 output "bastion_ip" {
