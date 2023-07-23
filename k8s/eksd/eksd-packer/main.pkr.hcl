@@ -8,7 +8,7 @@ packer {
 }
 
 source "amazon-ebs" "ubuntu" {
-  ami_name                     = "eksd-${var.eksd_k8s_version}-${var.eksd_revision}-ubuntu-{{timestamp}}"
+  ami_name                     = "eksd-ubuntu-{{timestamp}}_${var.eksd_k8s_version}-${var.eksd_revision}"
   instance_type                = var.instance_type
   region                       = "symphony"
   custom_endpoint_ec2          = "https://${var.zcompute_api}/api/v2/aws/ec2"
@@ -102,17 +102,33 @@ build {
     ]
   }
 
-  # Startup script (TODO) & cleanup
+  # Support for the EBS CSI (new devices kernel trigger - add relpath based on the device name)
   provisioner "file" {
-    source      = "files/start_eksd_node.sh"
-    destination = "/tmp/start_eksd_node.sh"
+    source      = "files/zadara_disk_mapper.py"
+    destination = "/tmp/zadara_disk_mapper.py"
+  }
+
+  provisioner "file" {
+    source      = "files/zadara_disk_mapper.rules"
+    destination = "/tmp/zadara_disk_mapper.rules"
   }
 
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/start_eksd_node.sh /usr/bin/start_eksd_node.sh",
-      "sudo chmod +x /usr/bin/start_eksd_node.sh",
-      "sudo rm /tmp/start_eksd_node.sh",
+      "sudo cp /tmp/zadara_disk_mapper.py /usr/bin/zadara_disk_mapper.py",
+      "sudo cp /tmp/zadara_disk_mapper.rules /etc/udev/rules.d/zadara_disk_mapper.rules",
+      "sudo chmod +x /usr/bin/zadara_disk_mapper.py",
+      "sudo rm /tmp/zadara_disk_mapper.rules /tmp/zadara_disk_mapper.py",
+      # Remove snap auto-import rule for block devices automated mounting
+      "sudo rm /lib/udev/rules.d/66-snapd-autoimport.rules",
+      # Remove the udev service networking limitation (required for the zadara_disk_mapper to be able and reach AWS API)
+      "sudo sed -i '/IPAddressDeny=any/d' /lib/systemd/system/systemd-udevd.service",
+    ]
+  }
+
+  # Cleanup
+  provisioner "shell" {
+    inline = [
       # TODO - fix hostname in cloud-init config
       "sudo cloud-init clean",
       "rm -rf /home/ubuntu/.ssh/authorized_keys",

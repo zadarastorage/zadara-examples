@@ -1,0 +1,1 @@
+KERNEL=="vd*[!0-9]", PROGRAM="/usr/bin/zadara_disk_mapper.py %k", SYMLINK+="%c"
