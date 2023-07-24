@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # info logs the given argument at info log level.
 info() {
@@ -42,8 +42,7 @@ identify() {
   # Default to server
   server_type="server"
   supervisor_status=$(curl --write-out '%%{http_code}' -sk --output /dev/null https://${server_url}/ping)
-
-  if [ "$supervisor_status" -ne 200 ]; then
+  if [ "$supervisor_status" -ne 403 ]; then
     info "API server unavailable, performing simple leader election"
     elect_leader
   else
@@ -54,7 +53,7 @@ identify() {
 cp_wait() {
   while true; do
     supervisor_status=$(curl --write-out '%%{http_code}' -sk --output /dev/null https://${server_url}/ping)
-    if [ "$supervisor_status" -eq 200 ]; then
+    if [ "$supervisor_status" -eq 403 ]; then
       info "Cluster is ready"
 
       # Let things settle down for a bit, not required

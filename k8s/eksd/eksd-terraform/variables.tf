@@ -122,12 +122,24 @@ variable "master_iam_role" {
 
 variable "worker_instance_profile" {
   type        = string
-  description = "if not provided will be created by tf, be aware requires IAMFullAccess permission"
+  description = "If not provided will be created by tf, be aware requires IAMFullAccess permission"
   default     = null
 }
 
 variable "worker_iam_role" {
   type        = string
-  description = "if not provided will be created by tf, be aware requires IAMFullAccess permission"
+  description = "If not provided will be created by tf, be aware requires IAMFullAccess permission"
   default     = null
+}
+
+variable "pod_network" {
+  type = string
+  description = "CIDR for internal Kubernetes pods network"
+  default = "10.244.0.0/16"
+}
+
+variable "controller_image_version" {
+  type = string
+  description = "Image tag (version) for the AWS Cloud Provider"
+  default = "v1.27.1"
 }

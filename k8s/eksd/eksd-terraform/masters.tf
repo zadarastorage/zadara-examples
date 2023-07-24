@@ -94,6 +94,8 @@ module "masters_asg" {
   subnet_ids          = [var.private_subnet_id]
   target_group_arn    = aws_lb_target_group.kube_master.arn
   volume_size         = var.masters_volume_size
+  pod_network         = var.pod_network
+  controller_image_version = var.controller_image_version
 
   max_size     = var.masters_count
   min_size     = var.masters_count

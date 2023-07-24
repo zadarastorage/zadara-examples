@@ -48,6 +48,11 @@ variable "pod_network" {
   default = "10.244.0.0/16"
 }
 
+variable "controller_image_version" {
+  type = string
+  default = "v1.27.1"
+}
+
 variable "security_groups" {
   type        = list(string)
   description = ""

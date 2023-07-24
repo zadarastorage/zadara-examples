@@ -36,11 +36,11 @@ write_files:
         - --cloud-provider=aws
         - --cloud-config=config/cloud.conf
         - --allocate-node-cidrs=false
-        - --cluster-cidr={ pod_network }
-        - --cluster-name={ cluster_name }
+        - --cluster-cidr=${ pod_network }
+        - --cluster-name=${ cluster_name }
         - --configure-cloud-routes=false
       image:
-          tag: { controller_image_version }
+          tag: ${ controller_image_version }
       cloudConfigPath: config/cloud.conf
       extraVolumes:
         - name: cloud-config
@@ -56,11 +56,11 @@ write_files:
       controller:
         env:
           - name: AWS_EC2_ENDPOINT
-            value: 'https://{ api_url }/api/v2/aws/ec2'
+            value: 'https://${ api_url }/api/v2/aws/ec2'
   - path: /etc/cron.d/eksd-reload-certs
     owner: root:root
     permissions: '0644'
-    content: "0 */1 * * * root kubeadm init phase upload-certs --upload-certs --certificate-key 12345678901234567890123456789012 \n"
+    content: "0 */1 * * * root kubeadm init phase upload-certs --upload-certs --certificate-key ${ certificate } \n"
   - path: /etc/kubernetes/zadara/kubeadm-config.yaml
     owner: root:root
     permissions: '0644'
