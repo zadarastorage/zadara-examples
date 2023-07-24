@@ -18,10 +18,14 @@ sudo ./get_helm.sh
 sudo helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
 #sudo helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
 sudo helm repo update
+sudo rm get_helm.sh
 
 # yq (required for EKS-D artifacts)
 sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
 sudo chmod a+x /usr/local/bin/yq
+
+# jq (required for the EBS CSI script)
+sudo apt-get install jq -y
 
 # Python (required for the EBS CSI script)
 sudo apt-get install python3-pip -y

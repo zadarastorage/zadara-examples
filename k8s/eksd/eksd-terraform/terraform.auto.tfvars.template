@@ -1,0 +1,26 @@
+zcompute_api             = ""
+cluster_access_key       = ""
+cluster_access_secret_id = ""
+
+environment                        = ""
+vpc_id                             = "vpc-"
+public_subnet_id                   = "subnet-..."
+private_subnet_id                  = "subnet-..."
+security_group_id                  = "sg-..."
+masters_load_balancer_id           = ""
+masters_load_balancer_internal_dns = ""
+
+masters_load_balancer_public_ip    = ""
+masters_load_balancer_private_ip   = ""
+
+eksd_ami_id                        = "ami-..."
+
+masters_count                      = 3 # recommended (1, 3, 5)
+workers_count                      = 0
+
+masters_key_pair                   = ""
+workers_key_pair                   = ""
+
+masters_volume_size                = "100"
+workers_volume_size                = "250"
+
