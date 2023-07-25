@@ -18,7 +18,7 @@ output "security_group_id" {
   value = aws_security_group.eksd_k8s.id
 }
 
-output "master_load_balancer_id" {
+output "masters_load_balancer_id" {
   value = local.nlb_id
 }
 
