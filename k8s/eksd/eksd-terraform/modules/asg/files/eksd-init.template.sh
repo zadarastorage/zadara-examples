@@ -91,7 +91,7 @@ local_cp_node_wait() {
 {
   # All need to re-configure kubelet and set the instance provider-id (no need to restart, kubeadm will handle that)
   instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-  sudo sed -i s,config.yaml,"config.yaml --provider-id=aws:///symphony/$instance_id", /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+  sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$instance_id", /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
   if [ "${type}" = "server" ]; then
     # Initialize the control plane - differentiate between the leader (seeder) and other servers
