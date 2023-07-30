@@ -95,7 +95,6 @@ module "masters_asg" {
   eksd_masters_lb_url = local.lb_url
   eksd_token          = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
   eksd_certificate    = random_password.random_cluster_certificate.result
-  api_url             = var.zcompute_private_api != null ? var.zcompute_private_api : var.zcompute_api
   is_worker           = false
   security_groups     = [var.security_group_id]
   subnet_ids          = [var.private_subnet_id]

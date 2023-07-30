@@ -1,32 +1,5 @@
 #cloud-config
 write_files:
-  - path: /etc/kubernetes/zadara/cloud-config.yaml
-    owner: root:root
-    permissions: '0644'
-    content: |
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: cloud-config
-      data:
-        cloud.conf: |
-          [Global]
-            Zone=eu-west-1a
-          [ServiceOverride "ec2"]
-            Service=ec2
-            Region=eu-west-1
-            URL=https://${ api_url }/api/v2/aws/ec2
-            SigningRegion=eu-west-1
-          [ServiceOverride "autoscaling"]
-            Service=autoscaling
-            Region=eu-west-1
-            URL=https://${ api_url }/api/v2/aws/autoscaling
-            SigningRegion=eu-west-1
-          [ServiceOverride "elasticloadbalancing"]
-            Service=elasticloadbalancing
-            Region=eu-west-1
-            URL=https://${ api_url }/api/v2/aws/elbv2
-            SigningRegion=eu-west-1
   - path: /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
     owner: root:root
     permissions: '0644'
@@ -49,16 +22,6 @@ write_files:
       extraVolumeMounts:
         - name: cloud-config
           mountPath: config
-  - path: /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
-    owner: root:root
-    permissions: '0644'
-    content: |
-      controller:
-        env:
-          - name: AWS_EC2_ENDPOINT
-            value: 'https://${ api_url }/api/v2/aws/ec2'
-          - name: AWS_REGION
-            value: 'symphony'
   - path: /etc/cron.d/eksd-reload-certs
     owner: root:root
     permissions: '0644'

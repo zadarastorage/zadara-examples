@@ -8,12 +8,6 @@ variable "zcompute_api" {
   description = "IP/DNS of the zCompute cluster API endpoint"
 }
 
-variable "zcompute_private_api" {
-  type        = string
-  default     = null
-  description = "IP/DNS of the zCompute cluster API internal endpoint"
-}
-
 variable "eksd_ami_id" {
   description = "ID (in AWS format) of the AMI to be used for the kubernetes nodes"
 }

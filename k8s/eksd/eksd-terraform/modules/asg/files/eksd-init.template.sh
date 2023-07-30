@@ -24,8 +24,8 @@ timestamp() {
 elect_leader() {
   # Fetch other running instances in ASG
   instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-  instances=$(aws autoscaling describe-auto-scaling-groups --endpoint-url "https://${api_url}/api/v2/aws/autoscaling" --auto-scaling-group-name "${asg_name}" --query 'AutoScalingGroups[*].Instances[?HealthStatus==`Healthy`].InstanceId' --output text)
-  sorted_instances=$(aws ec2 describe-instances --endpoint-url "https://${api_url}/api/v2/aws/ec2" --instance-ids $(echo $instances) | jq -r '.Reservations[].Instances[] | "{\"Name\": \"\(.Tags[] | select(.Key == "Name") | .["Name"] = .Value | .Name)\", \"Id\": \"\(.InstanceId)\"}"' | jq -s '.[] | { id: .Id, name: .Name, idx: (.Name | capture("(?<v>[[:digit:].]+)$").v)}' | jq -s -c 'sort_by(.idx)')
+  instances=$(aws autoscaling describe-auto-scaling-groups --endpoint-url "$api_endpoint/api/v2/aws/autoscaling" --auto-scaling-group-name "${asg_name}" --query 'AutoScalingGroups[*].Instances[?HealthStatus==`Healthy`].InstanceId' --output text)
+  sorted_instances=$(aws ec2 describe-instances --endpoint-url "$api_endpoint/api/v2/aws/ec2" --instance-ids $(echo $instances) | jq -r '.Reservations[].Instances[] | "{\"Name\": \"\(.Tags[] | select(.Key == "Name") | .["Name"] = .Value | .Name)\", \"Id\": \"\(.InstanceId)\"}"' | jq -s '.[] | { id: .Id, name: .Name, idx: (.Name | capture("(?<v>[[:digit:].]+)$").v)}' | jq -s -c 'sort_by(.idx)')
   leader_instance=$(echo $sorted_instances | jq -r '.[0].id')
 
   info "Current instance: $instance_id | Leader instance: $leader_instance"
@@ -94,6 +94,9 @@ local_cp_node_wait() {
   sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$instance_id", /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
   if [ "${type}" = "server" ]; then
+    # Extract the internal API endpoint of the compute cluster (requires version 23.08 and above)
+    api_endpoint=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq -c '.cluster_url' | cut -d\" -f2)
+
     # Initialize the control plane - differentiate between the leader (seeder) and other servers
     identify
 
@@ -110,8 +113,10 @@ local_cp_node_wait() {
       
       # Await for cluster to be responding before completing the setup
       local_cp_api_wait
-
+ 
       # Run post-init operations/deployments
+      sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/cloud-config.yaml
+      sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
       export KUBECONFIG=/etc/kubernetes/admin.conf
       kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
       kubectl apply -f /etc/kubernetes/zadara/cloud-config.yaml -n kube-system
@@ -119,8 +124,7 @@ local_cp_node_wait() {
 
       # Await for cluster nodes to be ready before continuing with additional deployments & declare cluster is up & running
       local_cp_node_wait
-      kubectl apply -f /etc/kubernetes/zadara/snapshot.storage.k8s.io_*.yaml
-      kubectl apply -f /etc/kubernetes/zadara/groupsnapshot.storage.k8s.io_*.yaml
+      kubectl apply $(ls /etc/kubernetes/zadara/*snapshot.storage.k8s.io_*.yaml | awk ' { print " -f " $1 } ')
       kubectl apply -n kube-system -f /etc/kubernetes/zadara/rbac-snapshot-controller.yaml
       kubectl apply -n kube-system -f /etc/kubernetes/zadara/setup-snapshot-controller.yaml
       helm install aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
@@ -146,6 +150,9 @@ local_cp_node_wait() {
     fi
 
   else
+    # Workers don't need the /etc/kubernetes/zadara directory
+    sudo rm -rf /etc/kubernetes/zadara
+
     # Wait for cluster to exist before joining it
     cp_wait
 

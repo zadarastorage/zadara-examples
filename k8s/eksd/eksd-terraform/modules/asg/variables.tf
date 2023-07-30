@@ -39,10 +39,6 @@ variable "is_worker" {
   type = bool
 }
 
-variable "api_url" {
-  type = string
-}
-
 variable "pod_network" {
   type = string
   default = "10.244.0.0/16"

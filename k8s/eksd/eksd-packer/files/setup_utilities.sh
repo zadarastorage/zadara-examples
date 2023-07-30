@@ -52,3 +52,39 @@ sudo wget -qO /etc/kubernetes/zadara/groupsnapshot.storage.k8s.io_volumegroupsna
 sudo wget -qO /etc/kubernetes/zadara/rbac-snapshot-controller.yaml https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
 sudo wget -qO /etc/kubernetes/zadara/setup-snapshot-controller.yaml https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
 
+# Genera cloud-config file (for the AWS CCM and others...)
+cat <<EOF | sudo tee /etc/kubernetes/zadara/cloud-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-config
+data:
+  cloud.conf: |
+    [Global]
+    Zone=eu-west-1a
+    [ServiceOverride "ec2"]
+    Service=ec2
+    Region=eu-west-1
+    URL=API_ENDPOINT/api/v2/aws/ec2
+    SigningRegion=eu-west-1
+    [ServiceOverride "autoscaling"]
+    Service=autoscaling
+    Region=eu-west-1
+    URL=API_ENDPOINT/api/v2/aws/autoscaling
+    SigningRegion=eu-west-1
+    [ServiceOverride "elasticloadbalancing"]
+    Service=elasticloadbalancing
+    Region=eu-west-1
+    URL=API_ENDPOINT/api/v2/aws/elbv2
+    SigningRegion=eu-west-1
+EOF
+
+# Generate value file for the EBS CSI
+cat <<EOF | sudo tee /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+controller:
+  env:
+    - name: AWS_EC2_ENDPOINT
+      value: 'API_ENDPOINT/api/v2/aws/ec2'
+    - name: AWS_REGION
+      value: 'symphony'
+EOF

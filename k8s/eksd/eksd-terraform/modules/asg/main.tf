@@ -8,13 +8,10 @@ data "cloudinit_config" "this" {
     content_type = "text/cloud-config"
     content      = templatefile("${path.module}/files/cloudinit-server.template.yaml", {
       token         = var.eksd_token
-      api_url       = var.api_url
       server_url    = var.eksd_masters_lb_url
       cluster_name  = var.cluster_name
       pod_network   = var.pod_network
       certificate   = var.eksd_certificate
-      asg_name      = var.group_name
-      type          = var.is_worker ? "worker" : "server"
       san           = var.eksd_san
       controller_image_version = var.controller_image_version
     })
@@ -26,7 +23,6 @@ data "cloudinit_config" "this" {
     content      = templatefile("${path.module}/files/eksd-init.template.sh", {
       type          = var.is_worker ? "worker" : "server"
       token         = var.eksd_token
-      api_url       = var.api_url
       asg_name      = var.group_name
       server_url    = var.eksd_masters_lb_url
       pod_network   = var.pod_network

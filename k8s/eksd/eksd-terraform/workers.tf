@@ -21,7 +21,6 @@ module "workers_asg" {
   key_pair_name       = var.workers_key_pair
   eksd_masters_lb_url = local.lb_url
   eksd_token          = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
-  api_url             = var.zcompute_private_api != null ? var.zcompute_private_api : var.zcompute_api
   is_worker           = true
   security_groups     = [var.security_group_id]
   subnet_ids          = [var.private_subnet_id]
