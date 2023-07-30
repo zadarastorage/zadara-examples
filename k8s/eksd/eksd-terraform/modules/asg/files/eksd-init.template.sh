@@ -119,8 +119,13 @@ local_cp_node_wait() {
 
       # Await for cluster nodes to be ready before continuing with additional deployments & declare cluster is up & running
       local_cp_node_wait
+      kubectl apply -f /etc/kubernetes/zadara/snapshot.storage.k8s.io_*.yaml
+      kubectl apply -f /etc/kubernetes/zadara/groupsnapshot.storage.k8s.io_*.yaml
+      kubectl apply -n kube-system -f /etc/kubernetes/zadara/rbac-snapshot-controller.yaml
+      kubectl apply -n kube-system -f /etc/kubernetes/zadara/setup-snapshot-controller.yaml
       helm install aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
-      kubectl apply -f /etc/kubernetes/zadara/ebs-csi-classes.yaml
+      kubectl apply -f /etc/kubernetes/zadara/ebs-csi-storageclass.yaml
+      kubectl apply -f /etc/kubernetes/zadara/ebs-csi-snapshotclass.yaml
     fi
 
     if [ $server_type = "server" ]; then 
