@@ -16,7 +16,7 @@ sudo curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/
 sudo chmod 700 get_helm.sh
 sudo ./get_helm.sh
 sudo helm repo add aws-cloud-controller-manager https://kubernetes.github.io/cloud-provider-aws
-#sudo helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+sudo helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
 sudo helm repo update
 sudo rm get_helm.sh
 
@@ -37,7 +37,7 @@ sudo pip3 install pyudev
 # OOTB Kubernetes deployments (pre-download charts/files)
 sudo mkdir -p /etc/kubernetes/zadara
 sudo helm pull aws-cloud-controller-manager/aws-cloud-controller-manager -d /etc/kubernetes/zadara/
-sudo helm pull aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver -d /etc/kubernetes/zadara/
+sudo helm pull aws-ebs-csi-driver/aws-ebs-csi-driver -d /etc/kubernetes/zadara/
 sudo wget -qO /etc/kubernetes/zadara/kube-flannel.yml https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 sudo wget -qO /etc/kubernetes/zadara/tigera-operator.yaml https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/tigera-operator.yaml
 sudo wget -qO /etc/kubernetes/zadara/custom-resources.yaml https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/custom-resources.yaml 

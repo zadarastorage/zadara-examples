@@ -57,6 +57,25 @@ write_files:
         env:
           - name: AWS_EC2_ENDPOINT
             value: 'https://${ api_url }/api/v2/aws/ec2'
+          - name: AWS_REGION
+            value: 'symphony'
+  - path: /etc/kubernetes/zadara/ebs-csi-classes.yaml
+    owner: root:root
+    permissions: '0644'
+    content: |
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: ebs-sc
+      provisioner: ebs.csi.aws.com
+      volumeBindingMode: WaitForFirstConsumer
+      ---
+      apiVersion: snapshot.storage.k8s.io/v1
+      kind: VolumeSnapshotClass
+      metadata:
+        name: csi-aws-vsc
+      driver: ebs.csi.aws.com
+      deletionPolicy: Delete
   - path: /etc/cron.d/eksd-reload-certs
     owner: root:root
     permissions: '0644'
@@ -79,5 +98,10 @@ write_files:
         podSubnet: "${ pod_network }"
       kubernetesVersion: "KUBE_VER"
       controlPlaneEndpoint: "${ server_url }"
+      apiServer:
+        certSANs:
+          %{~ for single_san in san ~}
+          - ${ single_san }
+          %{~ endfor ~}
       imageRepository: "public.ecr.aws/eks-distro/kubernetes"
       clusterName: "${ cluster_name }"

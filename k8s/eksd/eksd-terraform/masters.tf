@@ -27,6 +27,13 @@ locals {
   master_lb_hostname = var.masters_load_balancer_internal_dns != "" ? split(".", var.masters_load_balancer_internal_dns)[0] : ""
   lb_url             = "${var.masters_load_balancer_private_ip}:6443"
 
+  eksd_san = [
+    var.masters_load_balancer_public_ip,
+    var.masters_load_balancer_private_ip,
+    local.master_lb_hostname,
+    var.masters_load_balancer_internal_dns
+  ]
+
   iam_policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -95,6 +102,7 @@ module "masters_asg" {
   target_group_arn    = aws_lb_target_group.kube_master.arn
   volume_size         = var.masters_volume_size
   pod_network         = var.pod_network
+  eksd_san            = local.eksd_san
   controller_image_version = var.controller_image_version
 
   max_size     = var.masters_count

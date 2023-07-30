@@ -15,6 +15,7 @@ data "cloudinit_config" "this" {
       certificate   = var.eksd_certificate
       asg_name      = var.group_name
       type          = var.is_worker ? "worker" : "server"
+      san           = var.eksd_san
       controller_image_version = var.controller_image_version
     })
   }

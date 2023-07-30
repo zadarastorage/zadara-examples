@@ -117,8 +117,10 @@ local_cp_node_wait() {
       kubectl apply -f /etc/kubernetes/zadara/cloud-config.yaml -n kube-system
       helm install aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
 
-      # Await for cluster nodes to be ready before declare cluster is up & running
+      # Await for cluster nodes to be ready before continuing with additional deployments & declare cluster is up & running
       local_cp_node_wait
+      helm install aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+      kubectl apply -f /etc/kubernetes/zadara/ebs-csi-classes.yaml
     fi
 
     if [ $server_type = "server" ]; then 

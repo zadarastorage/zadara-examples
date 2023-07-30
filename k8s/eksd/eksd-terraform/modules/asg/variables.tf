@@ -48,6 +48,12 @@ variable "pod_network" {
   default = "10.244.0.0/16"
 }
 
+variable "eksd_san" {
+  default     = []
+  type        = list(string)
+  description = ""
+}
+
 variable "controller_image_version" {
   type = string
   default = "v1.27.1"
