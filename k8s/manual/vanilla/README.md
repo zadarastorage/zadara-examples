@@ -107,21 +107,21 @@ Kubernetes prerequisites
     sudo apt-mark hold kubelet kubeadm kubectl
     ```
     
-    *   Note: In releases older than Debian 12 and Ubuntu 22.04, `/etc/apt/keyrings` does not exist by default. You can create this directory if you need to, making it world-readable but writeable only by admins.
+*   Note: In releases older than Debian 12 and Ubuntu 22.04, `/etc/apt/keyrings` does not exist by default. You can create this directory if you need to, making it world-readable but writeable only by admins.
         
-    *   Override the original binaries with the ones compatible to your desired EKS-D [release](https://github.com/aws/eks-distro#releases "https://github.com/aws/eks-distro#releases") (check the relevant URI in the manifest), for example for deploying EKS-D 1.27 release #8 which is currently the latest and based on Kubernetes 1.27.3:
-        ```shell
-        cd /usr/bin
-        sudo rm kubelet kubeadm kubectl
-        sudo wget https://distro.eks.amazonaws.com/kubernetes-1-27/releases/8/artifacts/kubernetes/v1.27.3/bin/linux/amd64/kubelet
-        sudo wget https://distro.eks.amazonaws.com/kubernetes-1-27/releases/8/artifacts/kubernetes/v1.27.3/bin/linux/amd64/kubeadm
-        sudo wget https://distro.eks.amazonaws.com/kubernetes-1-27/releases/8/artifacts/kubernetes/v1.27.3/bin/linux/amd64/kubectl
-        sudo chmod +x kubeadm kubectl kubelet
-        cd ~
-        ```
+*   Override the original binaries with the ones compatible to your desired EKS-D [release](https://github.com/aws/eks-distro#releases "https://github.com/aws/eks-distro#releases") (check the relevant URI in the manifest), for example for deploying EKS-D 1.27 release #8 which is currently the latest and based on Kubernetes 1.27.3:
+    ```shell
+    cd /usr/bin
+    sudo rm kubelet kubeadm kubectl
+    sudo wget https://distro.eks.amazonaws.com/kubernetes-1-27/releases/8/artifacts/kubernetes/v1.27.3/bin/linux/amd64/kubelet
+    sudo wget https://distro.eks.amazonaws.com/kubernetes-1-27/releases/8/artifacts/kubernetes/v1.27.3/bin/linux/amd64/kubeadm
+    sudo wget https://distro.eks.amazonaws.com/kubernetes-1-27/releases/8/artifacts/kubernetes/v1.27.3/bin/linux/amd64/kubectl
+    sudo chmod +x kubeadm kubectl kubelet
+    cd ~
+    ```
         
-    *   Enable the kubelet service:  
-        `sudo systemctl enable kubelet`
+*   Enable the kubelet service:  
+    `sudo systemctl enable kubelet`
 
 Control-plane installation
 --------------------------
@@ -135,18 +135,13 @@ Control-plane installation
         sudo kubeadm config images pull --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8
         ```
         
-    *   If you try to pull the images you will find some are “missing” - specifically we need to make sure pause, etcd & coredns will be “corrected” per the EKS-D manifest:
-        
-        ![](https://api.media.atlassian.com/file/247012fc-accd-45ce-ace8-cded156d2829/image?allowAnimated=true&client=b8658e27-8c53-4a52-9533-a1d8afeb16d8&collection=contentId-2117009409&height=114&max-age=2592000&mode=full-fit&token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJiODY1OGUyNy04YzUzLTRhNTItOTUzMy1hMWQ4YWZlYjE2ZDgiLCJhY2Nlc3MiOnsidXJuOmZpbGVzdG9yZTpjb2xsZWN0aW9uOmNvbnRlbnRJZC0yMTE3MDA5NDA5IjpbInJlYWQiXX0sImV4cCI6MTY5MDk5MTk5MiwibmJmIjoxNjkwOTg5MTEyfQ.p0Bops9hRl34yukzX9z4aKC_uIHcSY2CM-iBEz0gb9I&width=760)
-        
-    *   We can workaround the issue in 2 possible ways:
+    *   If you try to pull the images you will find some are “missing” - specifically we need to make sure etcd & coredns will be “corrected” per the EKS-D manifest. We can workaround the issue in 2 possible ways:
         
         *   Pre-pull and re-tag the relevant images locally (as suggested on the [EKS-D docs](https://distro.eks.amazonaws.com/users/install/kubeadm-onsite/#set-up-a-control-plane-node "https://distro.eks.amazonaws.com/users/install/kubeadm-onsite/#set-up-a-control-plane-node") in step 3 and [other examples](https://aws.amazon.com/blogs/storage/running-kubernetes-cluster-with-amazon-eks-distro-across-aws-snowball-edge/ "https://aws.amazon.com/blogs/storage/running-kubernetes-cluster-with-amazon-eks-distro-across-aws-snowball-edge/")) - although the documented docker-based approach requires docker as well as AWS [authentication](https://docs.aws.amazon.com/AmazonECR/latest/public/getting-started-cli.html#cli-authenticate-registry "https://docs.aws.amazon.com/AmazonECR/latest/public/getting-started-cli.html#cli-authenticate-registry"))
             
         *   Use a detailed kubeadm [configuration file](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/ "https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/") and state the relevant [ClusterConfiguration](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/#kubeadm-k8s-io-v1beta3-ClusterConfiguration "https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/#kubeadm-k8s-io-v1beta3-ClusterConfiguration") resources to list the repository/name/tag accordingly, set the cluster name, etc.
             
     *   We suggest following the re-tag approach but instead of docker use `ctr` (the containerd CLI utility) with the `--namespace k8s.io` attribute to pull & re-tag the relevant images based on the original EKS-D manifest (you can also use `crictl` for the pull but it can't re-tag):
-        
         ```shell
         sudo ctr --namespace k8s.io images pull public.ecr.aws/eks-distro/coredns/coredns:v1.10.1-eks-1-27-8
         sudo ctr --namespace k8s.io images tag public.ecr.aws/eks-distro/coredns/coredns:v1.10.1-eks-1-27-8 public.ecr.aws/eks-distro/kubernetes/coredns:v1.10.1
@@ -158,18 +153,13 @@ Control-plane installation
 *   Initialize kubeadm
     
     *   Run the initialization with the EKS-D specs and the targeted internal pods network CIDR (here we use 10.244.0.0/16):  
-        ```shell
-        sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16
-        ```
+        `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16`
         
     *   If something goes wrong you might need to run `kubeadm reset` before you can init again…
         
-    *   The output should include the `kubeadm join` command with the dedicated token:
-        
-        ![](https://api.media.atlassian.com/file/db7fe7be-75b3-4fe4-9ee4-b67756b639dc/image?allowAnimated=true&client=b8658e27-8c53-4a52-9533-a1d8afeb16d8&collection=contentId-2117009409&height=330&max-age=2592000&mode=full-fit&token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJiODY1OGUyNy04YzUzLTRhNTItOTUzMy1hMWQ4YWZlYjE2ZDgiLCJhY2Nlc3MiOnsidXJuOmZpbGVzdG9yZTpjb2xsZWN0aW9uOmNvbnRlbnRJZC0yMTE3MDA5NDA5IjpbInJlYWQiXX0sImV4cCI6MTY5MDk5MTk5MiwibmJmIjoxNjkwOTg5MTEyfQ.p0Bops9hRl34yukzX9z4aKC_uIHcSY2CM-iBEz0gb9I&width=760)
+    *   A successful output should produce an output ending with the `kubeadm join` command with the dedicated token, to be used by any future worker nodes.
         
 *   Follow the kubectl configuration instructions and make sure it works, for example:
-    
     ```shell
     cd ~
     mkdir ~/.kube
@@ -178,26 +168,16 @@ Control-plane installation
     kubectl get nodes
     ```
     
-*   Note that by default, kubeadm name the cluster as “kubernetes” and you may change that either with a [ClusterConfiguration](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/#kubeadm-k8s-io-v1beta3-ClusterConfiguration "https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/#kubeadm-k8s-io-v1beta3-ClusterConfiguration") setting (using a configuration file before the init phase) or manually after the control plane is up, by editing the kubeadm-config ConfigMap and change the `clusterName` attribute:  
-    ```shell
-    kubectl edit configmaps kubeadm-config -n kube-system
-    ```
-    
-    ![](https://api.media.atlassian.com/file/2f957312-f2b0-4d83-9340-a677b4641651/image?allowAnimated=true&client=b8658e27-8c53-4a52-9533-a1d8afeb16d8&collection=contentId-2117009409&height=294&max-age=2592000&mode=full-fit&token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJiODY1OGUyNy04YzUzLTRhNTItOTUzMy1hMWQ4YWZlYjE2ZDgiLCJhY2Nlc3MiOnsidXJuOmZpbGVzdG9yZTpjb2xsZWN0aW9uOmNvbnRlbnRJZC0yMTE3MDA5NDA5IjpbInJlYWQiXX0sImV4cCI6MTY5MDk5MTk5MiwibmJmIjoxNjkwOTg5MTEyfQ.p0Bops9hRl34yukzX9z4aKC_uIHcSY2CM-iBEz0gb9I&width=760)
-    
+*   Note that by default, kubeadm name the cluster as “kubernetes” and you may change that either with a [ClusterConfiguration](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/#kubeadm-k8s-io-v1beta3-ClusterConfiguration "https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta3/#kubeadm-k8s-io-v1beta3-ClusterConfiguration") setting (using a configuration file before the init phase) or manually after the control plane is up, by editing the kubeadm-config ConfigMap (`kubectl edit configmaps kubeadm-config -n kube-system`) and changing the `clusterName` attribute.
+
 
 ### CNI
 
 *   Deploy either Flannel or Calico:
     
-    *   For [Flannel](https://github.com/flannel-io/flannel "https://github.com/flannel-io/flannel") the CIDR is the default so no changes required
-        
-        ```shell
-        kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
-        ```
-        
+    *   For [Flannel](https://github.com/flannel-io/flannel "https://github.com/flannel-io/flannel") the CIDR is the default so no changes required: \
+    `kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml`
     *   For [Calico](https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart "https://docs.tigera.io/calico/latest/getting-started/kubernetes/quickstart") you’ll need to specify the CIDR in the custom-resources.yaml:
-        
         ```shell
         kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/tigera-operator.yaml
         curl https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/custom-resources.yaml -O
@@ -206,20 +186,23 @@ Control-plane installation
         ```
         
 *   In case something went wrong with the CNI, you can perform the following:
-    
     *   Reset the cluster before re-initializing it   
-        Remove Kubernetes (`sudo kubeadm reset`)   
-        Remove the CNI network directory (`rm -rf /etc/cni/net.d`)
+        Remove Kubernetes \
+        `sudo kubeadm reset`  
+        Remove the CNI network directory \
+        `rm -rf /etc/cni/net.d`  
     *   Delete the CNI network interface  
-        Check which interfaces were created (`ip -4 addr show`)  
-        Delete the relevant one/s (for example, `ip link delete cni0`)
-    *   Restart containerd  
-        `sudo systemctl restart containerd`   
+        Check which interfaces were created \
+        `ip -4 addr show`  
+        Delete the relevant one/s for example \
+        `ip link delete cni0`  
+    *   Restart containerd \
+        `sudo systemctl restart containerd`
            
 *   Once the CNI pod/s are running   
-    * Make sure the master node is now ready  
+    * Make sure the master node is now ready: \
       `kubectl get nodes`     
-    * Make sure coredns pods are running as well:  
+    * Make sure coredns pods are running as well:  \
       `kubectl get pods -A -l k8s-app=kube-dns -o wide`
         
 *   If you wish to run actual workloads on the master node, remember to remove the taint from the master node:  
@@ -345,9 +328,9 @@ Control-plane installation
     *   LoadBalancer services
         *   Check out the relevant annotations in the service controller [documentation](https://github.com/kubernetes/cloud-provider-aws/blob/21acaa9cb3e801cf20ee33094f7765eeedd155c7/docs/service_controller.md "https://github.com/kubernetes/cloud-provider-aws/blob/21acaa9cb3e801cf20ee33094f7765eeedd155c7/docs/service_controller.md") and note that additional [subnet-level tagging](https://repost.aws/knowledge-center/eks-vpc-subnet-discovery "https://repost.aws/knowledge-center/eks-vpc-subnet-discovery") may be required
             
-        *   Note the minimal required annotation is (the controller only support NLB):
+        *   Note the minimal required annotation is (the controller only support NLB): \
             `service.beta.kubernetes.io/aws-load-balancer-type: nlb`
-        *   Note that the default NLB is internal-facing, so for external-facing NLB use the below:     
+        *   Note that the default NLB is internal-facing, so for external-facing NLB use the below: \
             `service.beta.kubernetes.io/aws-load-balancer-internal: "false"`
             
         *   For ALB support (using the Ingress resource) you can use the AWS [Load Balancer Controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller "https://github.com/kubernetes-sigs/aws-load-balancer-controller") as an additional standalone deployment which can handle both types of Load Balancers.
@@ -484,34 +467,6 @@ If you wish to add data-plane (worker) nodes to your Kubernetes cluster:
         ```
         
 
-Access the API Server remotely
-------------------------------
-
-If you wish to access the Kubernetes cluster’s API Server remotely you can follow [these](https://kubernetes.io/docs/tasks/extend-kubernetes/socks5-proxy-access-api/ "https://kubernetes.io/docs/tasks/extend-kubernetes/socks5-proxy-access-api/") instructions:
-
-*   Download the kubeconfig file (originally at `/etc/kubernetes/admin.conf`) to the remote host
-    
-*   SSH from the remote host to the control plane VM with an added SOCKS proxy (`-D <port>`), for example:  
-    `ssh -D 1080 -q -N -i <pem_file> username@kubernetes-server`
-    
-*   Add the `proxy-url` attribute to the downloaded file’s cluster configuration:
-    ```yaml
-    apiVersion: v1
-    clusters:
-    - cluster:
-        certificate-authority-data: LRMEMMW2 # shortened for readability 
-        server: https://<API_SERVER_IP_ADRESS>:6443  # the "Kubernetes API" server, in other words the IP address of kubernetes-remote-server.example
-        proxy-url: socks5://localhost:1080   # the "SSH SOCKS5 proxy" in the diagram above
-    name: default
-    ```
-    
-    For example:
-    
-    ![](https://api.media.atlassian.com/file/3eeb0f0f-87a2-482a-b881-f108a3a71906/image?allowAnimated=true&client=b8658e27-8c53-4a52-9533-a1d8afeb16d8&collection=contentId-2117009409&height=255&max-age=2592000&mode=full-fit&token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJiODY1OGUyNy04YzUzLTRhNTItOTUzMy1hMWQ4YWZlYjE2ZDgiLCJhY2Nlc3MiOnsidXJuOmZpbGVzdG9yZTpjb2xsZWN0aW9uOmNvbnRlbnRJZC0yMTE3MDA5NDA5IjpbInJlYWQiXX0sImV4cCI6MTY5MDk5MTk5MiwibmJmIjoxNjkwOTg5MTEyfQ.p0Bops9hRl34yukzX9z4aKC_uIHcSY2CM-iBEz0gb9I&width=760)
-    
-*   Once there and as long as the ssh tunnel runs, kubectl (or any other client) will use the proxy for all cluster operations
-    
-
 EBS CSI
 -------
 
@@ -616,3 +571,28 @@ EBS CSI
     `kubectl get pods -A -l app.kubernetes.io/name=aws-ebs-csi-driver`
     
 *   You can use their [examples](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/examples/kubernetes") to validate all functionalities are working…
+
+
+Access a private Kubernetes cluster remotely
+--------------------------------------------
+
+For private Kuebrnetes clusters, the cluster's API server endpoint is using a private IP which is not accessible from the internet, however you can still use an SSH tunnel in order to consume it from a bastion/jump server as mentioned in [these](https://kubernetes.io/docs/tasks/extend-kubernetes/socks5-proxy-access-api/ "https://kubernetes.io/docs/tasks/extend-kubernetes/socks5-proxy-access-api/") instructions:
+
+*   Download the kubeconfig file (originally at `/etc/kubernetes/admin.conf`) to the remote host
+    
+*   SSH from the remote host to the control plane VM with an added SOCKS proxy (`-D <port>`), for example:  
+    `ssh -D 1080 -q -N -i <pem_file> username@kubernetes-server`
+    
+*   Add the `proxy-url` attribute to the downloaded file’s cluster configuration:
+    ```yaml
+    apiVersion: v1
+    clusters:
+    - cluster:
+        certificate-authority-data: LRMEMMW2 # shortened for readability 
+        server: https://<API_SERVER_IP_ADRESS>:6443  # the "Kubernetes API" server, in other words the IP address of kubernetes-remote-server.example
+        proxy-url: socks5://localhost:1080   # the "SSH SOCKS5 proxy" in the diagram above
+    name: default
+    ```
+    
+*   Once there and as long as the SSH tunnel runs, kubectl (or any other client) will use the proxy for all cluster operations
+    
