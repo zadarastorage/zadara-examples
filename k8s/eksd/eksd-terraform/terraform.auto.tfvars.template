@@ -2,6 +2,7 @@ zcompute_api             = ""
 cluster_access_key       = ""
 cluster_access_secret_id = ""
 
+bastion_ip                         = ""
 environment                        = ""
 vpc_id                             = "vpc-"
 public_subnet_id                   = "subnet-..."
@@ -15,8 +16,8 @@ masters_load_balancer_private_ip   = ""
 
 eksd_ami_id                        = "ami-..."
 
-masters_count                      = 3 # recommended (1, 3, 5)
-workers_count                      = 0
+masters_count                      = 1 # recommended (1, 3, 5)
+workers_count                      = 1
 
 masters_key_pair                   = ""
 workers_key_pair                   = ""

@@ -23,7 +23,7 @@ resource "aws_ec2_tag" "public_shared" {
 }
 
 resource "aws_ec2_tag" "sg" {
-  key = "kubernetes.io/cluster/${var.environment}"
-  value = "shared"
+  key         = "kubernetes.io/cluster/${var.environment}"
+  value       = "shared"
   resource_id = var.security_group_id
 }

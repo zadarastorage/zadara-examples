@@ -1,6 +1,6 @@
 resource "aws_default_security_group" "eksd" {
   vpc_id = aws_vpc.eksd_vpc.id
-  tags   = {
+  tags = {
     Name = "${var.environment}-vpc-eksd-default-sg"
   }
 }
@@ -25,7 +25,7 @@ resource "aws_security_group_rule" "eksd_default_sg_ingress" {
 
 resource "aws_security_group" "eksd_k8s" {
   vpc_id = aws_vpc.eksd_vpc.id
-  name = "${var.environment}-vpc-eksd-k8s"
+  name   = "${var.environment}-vpc-eksd-k8s"
 }
 
 resource "aws_security_group_rule" "eksd_k8s_sg_egress" {
@@ -66,11 +66,11 @@ resource "aws_security_group_rule" "eksd_k8s_api_public" {
 }
 
 resource "aws_security_group_rule" "eksd_k8s_api_private" {
-  count             = var.expose_k8s_api_publicly ? 0 : 1
-  from_port         = 6443
-  to_port           = 6443
-  protocol          = "tcp"
+  count                    = var.expose_k8s_api_publicly ? 0 : 1
+  from_port                = 6443
+  to_port                  = 6443
+  protocol                 = "tcp"
   source_security_group_id = aws_security_group.eksd_k8s.id
-  security_group_id = aws_security_group.eksd_k8s.id
-  type              = "ingress"
+  security_group_id        = aws_security_group.eksd_k8s.id
+  type                     = "ingress"
 }

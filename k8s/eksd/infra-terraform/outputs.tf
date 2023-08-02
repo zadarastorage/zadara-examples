@@ -1,4 +1,4 @@
-output "evironment" {
+output "environment" {
   value = var.environment
 }
 

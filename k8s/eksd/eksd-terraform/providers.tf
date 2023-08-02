@@ -12,12 +12,12 @@ provider "aws" {
     ec2         = "https://${var.zcompute_api}/api/v2/aws/ec2"
     autoscaling = "https://${var.zcompute_api}/api/v2/aws/autoscaling"
     elb         = "https://${var.zcompute_api}/api/v2/aws/elbv2"
-#    elbv2   = "https://${var.zcompute_api}/api/v2/aws/elbv2"
-    s3          = "https://${var.zcompute_api}:1061/"
-    rds         = "https://${var.zcompute_api}/api/v2/aws/rds"
-    iam         = "https://${var.zcompute_api}/api/v2/aws/iam"
-    route53     = "https://${var.zcompute_api}/api/v2/aws/route53"
-    sts         = "https://${var.zcompute_api}/api/v2/aws/sts"
+    #    elbv2   = "https://${var.zcompute_api}/api/v2/aws/elbv2"
+    s3      = "https://${var.zcompute_api}:1061/"
+    rds     = "https://${var.zcompute_api}/api/v2/aws/rds"
+    iam     = "https://${var.zcompute_api}/api/v2/aws/iam"
+    route53 = "https://${var.zcompute_api}/api/v2/aws/route53"
+    sts     = "https://${var.zcompute_api}/api/v2/aws/sts"
   }
 
   region   = "us-east-1"

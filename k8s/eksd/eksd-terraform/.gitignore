@@ -32,3 +32,4 @@ terraform.rc
 *.tfstate*
 backend.tf
 .states
+kubeconfig

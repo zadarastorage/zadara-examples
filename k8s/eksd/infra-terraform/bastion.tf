@@ -11,7 +11,7 @@ resource "aws_instance" "bastion" {
   key_name               = var.bastion_key_name
   subnet_id              = aws_subnet.eksd_public.id
   vpc_security_group_ids = [aws_security_group.eksd_k8s.id]
-  tags                   = {
+  tags = {
     Name = "bastion"
   }
 }

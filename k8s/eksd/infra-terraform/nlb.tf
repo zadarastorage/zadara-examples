@@ -1,7 +1,7 @@
 locals {
-  nlb_id = var.expose_k8s_api_publicly ? aws_lb.eksd_masters_public[0].id : aws_lb.eksd_masters_private[0].id
+  nlb_id          = var.expose_k8s_api_publicly ? aws_lb.eksd_masters_public[0].id : aws_lb.eksd_masters_private[0].id
   nlb_private_dns = "elb-${local.nlb_id}.${var.dhcp_options_domain_name}"
-  nlb_public_dns = var.expose_k8s_api_publicly ? aws_lb.eksd_masters_public[0].dns_name : aws_lb.eksd_masters_private[0].dns_name
+  nlb_public_dns  = var.expose_k8s_api_publicly ? aws_lb.eksd_masters_public[0].dns_name : aws_lb.eksd_masters_private[0].dns_name
 }
 
 resource "aws_lb" "eksd_masters_private" {
@@ -10,7 +10,7 @@ resource "aws_lb" "eksd_masters_private" {
   internal           = true
   load_balancer_type = "network"
   subnets            = [aws_subnet.eksd_private.id]
-  security_groups    = [
+  security_groups = [
     aws_security_group.eksd_k8s.id,
   ]
   tags = {
@@ -26,7 +26,7 @@ resource "aws_lb" "eksd_masters_public" {
   internal           = false
   load_balancer_type = "network"
   subnets            = [aws_subnet.eksd_public.id]
-  security_groups    = [
+  security_groups = [
     aws_security_group.eksd_k8s.id,
   ]
   tags = {

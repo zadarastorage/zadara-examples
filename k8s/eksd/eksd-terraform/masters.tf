@@ -85,23 +85,23 @@ locals {
 }
 
 module "masters_asg" {
-  source              = "./modules/asg"
-  cluster_name        = var.environment
-  group_name          = "${var.environment}-master"
-  image_id            = var.eksd_ami_id
-  instance_type       = var.master_instance_type
-  instance_profile    = local.masters_instance_profile
-  key_pair_name       = var.masters_key_pair
-  eksd_masters_lb_url = local.lb_url
-  eksd_token          = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
-  eksd_certificate    = random_password.random_cluster_certificate.result
-  is_worker           = false
-  security_groups     = [var.security_group_id]
-  subnet_ids          = [var.private_subnet_id]
-  target_group_arn    = aws_lb_target_group.kube_master.arn
-  volume_size         = var.masters_volume_size
-  pod_network         = var.pod_network
-  eksd_san            = local.eksd_san
+  source                   = "./modules/asg"
+  cluster_name             = var.environment
+  group_name               = "${var.environment}-master"
+  image_id                 = var.eksd_ami_id
+  instance_type            = var.master_instance_type
+  instance_profile         = local.masters_instance_profile
+  key_pair_name            = var.masters_key_pair
+  eksd_masters_lb_url      = local.lb_url
+  eksd_token               = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
+  eksd_certificate         = random_password.random_cluster_certificate.result
+  is_worker                = false
+  security_groups          = [var.security_group_id]
+  subnet_ids               = [var.private_subnet_id]
+  target_group_arn         = aws_lb_target_group.kube_master.arn
+  volume_size              = var.masters_volume_size
+  pod_network              = var.pod_network
+  eksd_san                 = local.eksd_san
   controller_image_version = var.controller_image_version
 
   max_size     = var.masters_count

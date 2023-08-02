@@ -124,6 +124,7 @@ local_cp_node_wait() {
 
       # Await for cluster nodes to be ready before continuing with additional deployments & declare cluster is up & running
       local_cp_node_wait
+      sudo chmod 644 /etc/kubernetes/admin.conf
       kubectl apply $(ls /etc/kubernetes/zadara/*snapshot.storage.k8s.io_*.yaml | awk ' { print " -f " $1 } ')
       kubectl apply -n kube-system -f /etc/kubernetes/zadara/rbac-snapshot-controller.yaml
       kubectl apply -n kube-system -f /etc/kubernetes/zadara/setup-snapshot-controller.yaml
