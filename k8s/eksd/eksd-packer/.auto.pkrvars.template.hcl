@@ -2,7 +2,7 @@
 api_endpoint = ""
 
 # Bastion
-ssh_bastion_username = "centos"
+ssh_bastion_username = "ubuntu"
 bastion_public_ip    = ""
 
 # Packer build

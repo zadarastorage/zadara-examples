@@ -8,7 +8,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D deployment
     * This automated solution will only work on zCompute release 23.08 and above
 * Network:
     * Networking Service Engine VPC_NATGW must be enabled (usually already on for production clouds)
-* Images
+* Images:
     * Ubuntu 22.04 (or CentOS 7) image should be imported from the Marketplace to be used for the Bastion VM
     * EKS-D image (based on Ubuntu 22.04) should be imported from the below URL in order to be used for the Kubernetes nodes: \
       `https://tlv-public.s3.il-central-1.amazonaws.com/eksd-ubuntu-1690746505_1-27-8.disk1.qcow2`
@@ -83,7 +83,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D deployment
     * Tag the existing private & public subnets for Load Balancer controller discovery
 * `terraform apply` - this will make the actual changes on the environment
 
-Once Terraform is over, you will need to get the kubeconfig file from the first master node - you can use the `get_kubeconfig.sh` script as mentioned on the `terraform output` in order to fetch the initial kubeconfig from the first master node (through the bastion). 
+Once Terraform is over, you will need to get the kubeconfig file from the first master node - you can use the `get_kubeconfig.sh` script as mentioned on the `terraform output` in order to fetch the initial kubeconfig from the first master node (through the bastion) into the project's directory. 
 
 Use the kubeconfig to connect to the Kubernetes cluster - it comes with the below OOTB deployments:
 * CCM - using the AWS Cloud Provider, providing you the below abilities:
@@ -121,9 +121,11 @@ Inside the packer folder you will find a build project which will allow you to b
    * `ssh_keypair_name` - Keypair name to use for the builder
    * `private_keypair_path` - local path to the SSH private key (will be used by packer script to login in to the bastion and builder instances)
 
-Run the packer command using: 
-`packer init .`
-`packer build .`
+* Run the packer command using: 
+  ```shell
+  packer init .
+  packer build .
+  ```
 
 
 ## Optional: Zadara CSI
@@ -185,15 +187,15 @@ Only relevant if you wish to enable the Kubernetes [cluster autoscaler](https://
   * If you opt to use the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) - remember to add the relevant tags on the relevant ASG/s (either from zCompute GUI, AWS CLI or Symp) - the default ones are `k8s.io/cluster-autoscaler/enabled` and `k8s.io/cluster-autoscaler/<cluster-name>` where cluster-name is the environment variable set on the rke2-terraform project
   * If you opt to use the [manual mode](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#manual-configuration)  - remember to define the specific workers ASG/s name/s and their lower/upper bounds on the [autoscalingGroups](https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml#L39) values
 * Make sure your values refer to the pre-populated cloud-config ConfigMap as mentioned on the [documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-cloud-config-with-helm):
-```yaml
-cloudConfigPath: config/cloud.conf
+    ```yaml
+    cloudConfigPath: config/cloud.conf
 
-extraVolumes:
-  - name: cloud-config
-    configMap:
-      name: cloud-config
+    extraVolumes:
+      - name: cloud-config
+        configMap:
+          name: cloud-config
 
-extraVolumeMounts:
-  - name: cloud-config
-    mountPath: config
-```
+    extraVolumeMounts:
+      - name: cloud-config
+        mountPath: config
+    ```
