@@ -1,7 +1,9 @@
-zcompute_api             = ""
 cluster_access_key       = ""
 cluster_access_secret_id = ""
 
+eksd_ami_id                        = "ami-..."
+
+api_endpoint                       = ""
 bastion_ip                         = ""
 environment                        = ""
 vpc_id                             = "vpc-"
@@ -14,14 +16,14 @@ masters_load_balancer_internal_dns = ""
 masters_load_balancer_public_ip    = ""
 masters_load_balancer_private_ip   = ""
 
-eksd_ami_id                        = "ami-..."
+masters_key_pair                   = ""
+workers_key_pair                   = ""
+
+masters_instance_type              = "z4.large"
+workers_instance_type              = "z4.large"
 
 masters_count                      = 1 # recommended (1, 3, 5)
 workers_count                      = 1
 
-masters_key_pair                   = ""
-workers_key_pair                   = ""
-
 masters_volume_size                = "100"
 workers_volume_size                = "250"
-

@@ -1,4 +1,4 @@
-zcompute_api = ""
+api_endpoint = ""
 cluster_access_key = ""
 cluster_access_secret_id = ""
 bastion_key_name = ""

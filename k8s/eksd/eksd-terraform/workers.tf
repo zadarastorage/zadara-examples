@@ -16,7 +16,7 @@ module "workers_asg" {
   cluster_name        = var.environment
   group_name          = "${var.environment}-worker"
   image_id            = var.eksd_ami_id
-  instance_type       = var.worker_instance_type
+  instance_type       = var.workers_instance_type
   instance_profile    = local.workers_instance_profile
   key_pair_name       = var.workers_key_pair
   eksd_masters_lb_url = local.lb_url

@@ -89,7 +89,7 @@ module "masters_asg" {
   cluster_name             = var.environment
   group_name               = "${var.environment}-master"
   image_id                 = var.eksd_ami_id
-  instance_type            = var.master_instance_type
+  instance_type            = var.masters_instance_type
   instance_profile         = local.masters_instance_profile
   key_pair_name            = var.masters_key_pair
   eksd_masters_lb_url      = local.lb_url

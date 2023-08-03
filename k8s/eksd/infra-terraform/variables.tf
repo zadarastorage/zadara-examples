@@ -1,4 +1,4 @@
-variable "zcompute_api" {
+variable "api_endpoint" {
   type        = string
   description = "IP/DNS of the zCompute cluster API endpoint"
 }

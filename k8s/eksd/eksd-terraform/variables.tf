@@ -1,4 +1,4 @@
-variable "zcompute_api" {
+variable "api_endpoint" {
   type        = string
   description = "IP/DNS of the zCompute cluster API endpoint"
 }
@@ -40,13 +40,13 @@ variable "workers_count" {
   type = number
 }
 
-variable "master_instance_type" {
-  default     = "z4.xlarge"
+variable "masters_instance_type" {
+  default     = "z4.large"
   description = "Kubernetes control-plane (master) node instance type - etcd recommends L-XL, kubeadm will not allow M"
 }
 
-variable "worker_instance_type" {
-  default     = "z8.xlarge"
+variable "workers_instance_type" {
+  default     = "z8.large"
   description = "Kubernetes data-plane (worker) node instance type - depends on the workload, kubeadm will not allow M"
 }
 
@@ -68,8 +68,8 @@ variable "security_group_id" {
 
 variable "bastion_ip" {
   description = "Bastion public IP - only required if you want to fetch the initial kubeconfig"
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
 
 variable "workers_key_pair" {
