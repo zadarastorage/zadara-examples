@@ -155,6 +155,8 @@ Control-plane installation
     *   Run the initialization with the EKS-D specs and the targeted internal pods network CIDR (here we use 10.244.0.0/16):  
         `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16`
         
+    * For public-facing Kubernetes clusters, assuming your control plane VM has an additional public IP, you may want to add the `--apiserver-cert-extra-sans` flag with the relevant IP address so later on you can refer to that IP as an alternative server address which will be respected by the server certificate. 
+
     *   If something goes wrong you might need to run `kubeadm reset` before you can init again…
         
     *   A successful output should produce an output ending with the `kubeadm join` command with the dedicated token, to be used by any future worker nodes.
@@ -371,7 +373,7 @@ If you wish to create an HA-based cluster instead of a single control-plane node
     
 *   Create an NLB (TCP-based) Load Balancer on zCompute
     
-    *   Make sure to place it on the same VPC - it would reside on the public subnet and get a public IP
+    *   Make sure to place it on the same VPC, and for Public-facing clusters it would reside on the public subnet and get a public IP
         
     *   Create a TCP-based listener for the LB and use the default port 6443 (or change it accordingly throughout the following instructions)
         
@@ -379,10 +381,10 @@ If you wish to create an HA-based cluster instead of a single control-plane node
         
     *   Add all relevant control-plane VMs as targets (you can start with the initial seeder VM and later add the rest)
         
-*   Initialize the cluster using the LB public IP as the control-plane endpoint and upload the cluster certificates as a 2-hours TTL secret:  
-    `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-public-ip>:6443 --upload-certs`
+*   Initialize the cluster using the LB private IP as the control-plane endpoint, add the public IP as an alternative SAN (if relevant, only for public-facing clusters) and upload the cluster certificates as a 2-hours TTL secret:  
+    `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-public-ip>:6443 --apiserver-cert-extra-sans <LB-public-ip> --upload-certs`
     
-*   Continue with the cluster deployment as usual (note the kubeconfig file will reflect the LB public IP as the api server URL so you wouldn’t need to proxy into it for remote access)
+*   Continue with the cluster deployment as usual - note the kubeconfig file will reflect the LB private IP as the api server URL and you may want to change it to the public IP (so you wouldn’t need to proxy into it for remote access)
     
 *   Join the other control-plane VMs within 2 hours to the existing seeder (if you need longer time, you can always create a new certificate with `kubeadm certs certificate-key` on the seeder side and use the output for the new VM side)
     
