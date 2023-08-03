@@ -5,8 +5,8 @@ variable "group_name" {
 
 variable "volume_type" {
   type        = string
-  default     = "default"
-  description = ""
+  default     = null
+  description = "Defaulting to null in order to preserve the default type listed on zCompute"
 }
 
 variable "volume_size" {
@@ -80,9 +80,9 @@ variable "image_id" {
   description = ""
 }
 
-variable "target_group_arn" {
-  type        = string
-  default     = ""
+variable "target_group_arns" {
+  type        = list(string)
+  default     = null
   description = ""
 }
 

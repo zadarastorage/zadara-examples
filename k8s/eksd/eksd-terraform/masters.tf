@@ -98,7 +98,7 @@ module "masters_asg" {
   is_worker                = false
   security_groups          = [var.security_group_id]
   subnet_ids               = [var.private_subnet_id]
-  target_group_arn         = aws_lb_target_group.kube_master.arn
+  target_group_arns        = [aws_lb_target_group.kube_master.arn]
   volume_size              = var.masters_volume_size
   pod_network              = var.pod_network
   eksd_san                 = local.eksd_san

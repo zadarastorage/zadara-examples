@@ -20,7 +20,7 @@ master_user=$7
 master_keypair=$8
 
 # Copy the master keypair into the bastion and fix its permissions for further usage
-scp -i $bastion_keypair $master_keypair $bastion_user@$bastion_ip:~/master_keypair.pem
+scp -i $bastion_keypair -o StrictHostKeyChecking=no $master_keypair $bastion_user@$bastion_ip:~/master_keypair.pem
 ssh $bastion_user@$bastion_ip "chmod 400 ~/master_keypair.pem"
 
 # SSH into the bastion in order to fetch the kubeconfig from the master node (can take a while)

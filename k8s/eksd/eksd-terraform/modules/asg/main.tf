@@ -61,7 +61,7 @@ resource "aws_autoscaling_group" "eksd" {
   min_size             = var.min_size
   desired_capacity     = var.desired_size
   vpc_zone_identifier  = var.subnet_ids
-  target_group_arns    = [var.target_group_arn]
+  target_group_arns    = var.target_group_arns
 
   dynamic "tag" {
     for_each = var.instance_tags
