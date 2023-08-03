@@ -91,7 +91,7 @@ module "masters_asg" {
   image_id                 = var.eksd_ami_id
   instance_type            = var.masters_instance_type
   instance_profile         = local.masters_instance_profile
-  key_pair_name            = var.masters_key_pair
+  key_pair_name            = var.masters_key_name
   eksd_masters_lb_url      = local.lb_url
   eksd_token               = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
   eksd_certificate         = random_password.random_cluster_certificate.result

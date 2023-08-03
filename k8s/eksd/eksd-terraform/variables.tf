@@ -72,11 +72,11 @@ variable "bastion_ip" {
   default     = ""
 }
 
-variable "workers_key_pair" {
+variable "workers_key_name" {
   type = string
 }
 
-variable "masters_key_pair" {
+variable "masters_key_name" {
   type = string
 }
 

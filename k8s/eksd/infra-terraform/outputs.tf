@@ -34,7 +34,7 @@ output "bastion_ip" {
   value = aws_eip.bastion.public_ip
 }
 
-output "get_loadbalancer_script" {
+output "x_loadbalancer_script" {
   description = "Pointer to script which can get the Load Balancer private & public IPs"
   value       = "${path.module}/get_loadbalancer.sh ${var.api_endpoint} ${aws_eip.bastion.public_ip} ${local.nlb_private_dns} <access_key> <secret_key> <bastion_user> <bastion_key>"
 }

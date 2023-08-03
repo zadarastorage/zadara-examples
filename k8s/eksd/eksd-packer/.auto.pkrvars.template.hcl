@@ -1,5 +1,5 @@
 # zCompute API
-zcompute_api = ""
+api_endpoint = ""
 
 # Bastion
 ssh_bastion_username = "centos"

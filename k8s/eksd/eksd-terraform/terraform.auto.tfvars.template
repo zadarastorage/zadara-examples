@@ -1,8 +1,6 @@
 cluster_access_key       = ""
 cluster_access_secret_id = ""
 
-eksd_ami_id                        = "ami-..."
-
 api_endpoint                       = ""
 bastion_ip                         = ""
 environment                        = ""
@@ -16,8 +14,10 @@ masters_load_balancer_internal_dns = ""
 masters_load_balancer_public_ip    = ""
 masters_load_balancer_private_ip   = ""
 
-masters_key_pair                   = ""
-workers_key_pair                   = ""
+eksd_ami_id                        = "ami-..."
+
+masters_key_name                   = ""
+workers_key_name                   = ""
 
 masters_instance_type              = "z4.large"
 workers_instance_type              = "z4.large"

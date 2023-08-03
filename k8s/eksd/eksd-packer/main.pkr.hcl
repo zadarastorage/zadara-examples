@@ -11,7 +11,7 @@ source "amazon-ebs" "ubuntu" {
   ami_name                     = "eksd-ubuntu-{{timestamp}}_${var.eksd_k8s_version}-${var.eksd_revision}"
   instance_type                = var.instance_type
   region                       = "symphony"
-  custom_endpoint_ec2          = "https://${var.zcompute_api}/api/v2/aws/ec2"
+  custom_endpoint_ec2          = "https://${var.api_endpoint}/api/v2/aws/ec2"
   insecure_skip_tls_verify     = true
   communicator                 = "ssh"
   source_ami                   = var.ami_id

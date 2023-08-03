@@ -18,7 +18,7 @@ module "workers_asg" {
   image_id            = var.eksd_ami_id
   instance_type       = var.workers_instance_type
   instance_profile    = local.workers_instance_profile
-  key_pair_name       = var.workers_key_pair
+  key_pair_name       = var.workers_key_name
   eksd_masters_lb_url = local.lb_url
   eksd_token          = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
   is_worker           = true
