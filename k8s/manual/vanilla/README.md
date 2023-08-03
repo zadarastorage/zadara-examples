@@ -382,7 +382,7 @@ If you wish to create an HA-based cluster instead of a single control-plane node
     *   Add all relevant control-plane VMs as targets (you can start with the initial seeder VM and later add the rest)
         
 *   Initialize the cluster using the LB private IP as the control-plane endpoint, add the public IP as an alternative SAN (if relevant, only for public-facing clusters) and upload the cluster certificates as a 2-hours TTL secret:  
-    `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-public-ip>:6443 --apiserver-cert-extra-sans <LB-public-ip> --upload-certs`
+    `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-private-ip>:6443 --apiserver-cert-extra-sans <LB-public-ip> --upload-certs`
     
 *   Continue with the cluster deployment as usual - note the kubeconfig file will reflect the LB private IP as the api server URL and you may want to change it to the public IP (so you wouldn’t need to proxy into it for remote access)
     
