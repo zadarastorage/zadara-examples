@@ -10,8 +10,9 @@ Below is an example (not OOTB production-grade solution) for an EKS-D deployment
     * Networking Service Engine VPC_NATGW must be enabled (usually already on for production clouds)
 * Images:
     * Ubuntu 22.04 (or CentOS 7) image should be imported from the Marketplace to be used for the Bastion VM
-    * EKS-D image (based on Ubuntu 22.04) should be imported from the below URL in order to be used for the Kubernetes nodes: \
-      `https://tlv-public.s3.il-central-1.amazonaws.com/eksd-ubuntu-1690746505_1-27-8.disk1.qcow2`
+    * Zadara's pre-baked EKS-D image should be imported from the below URL to be used for the Kubernetes nodes: \
+      `https://tlv-public.s3.il-central-1.amazonaws.com/eksd-ubuntu-1690746505_1-27-8.disk1.qcow2` \
+      (you may find other pre-baked images listed [here](eksd-packer/README.md#kubernetes-1-27))
 * Credentials:
     * Key-pair for the bastion server (either import or create a new one)
     * Key-Pair for the master servers (can be the same)
