@@ -1,13 +1,11 @@
-# EKS-D deployment setup
+# EKS-D automated deployment
+Below is an example (not OOTB production-grade solution) for an EKS-D automated deployment over zCompute - facilitating cloud integration with ASG scaling, instance labeling & lifecycle, native load balancing and built-in storage abilities with the AWS EBS CSI driver. 
 
-Below is an example (not OOTB production-grade solution) for an EKS-D deployment over zCompute
+## Known limitations
+* zCompute minimal version is **23.08** (previous versions will not support the EKS-D initialization phase which is implemented in Step #2) 
+* EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
 
 ## Prerequisites: zCompute
-
-* Version
-    * This automated solution will only work on zCompute release 23.08 and above
-* Network:
-    * Networking Service Engine VPC_NATGW must be enabled (usually already on for production clouds)
 * Images:
     * Ubuntu 22.04 (or CentOS 7) image should be imported from the Marketplace to be used for the Bastion VM
     * Zadara's pre-baked EKS-D image should be imported from the below URL to be used for the Kubernetes nodes: \
@@ -17,7 +15,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D deployment
     * Key-pair for the bastion server (either import or create a new one)
     * Key-Pair for the master servers (can be the same)
     * Key-Pair for the worker agents (can be the same)
-    * AWS programmatic credentials (access key & secret key) with tenant-admin & AWS MemberFullAccess + IAMFullAccess permissions for the relevant project
+    * AWS programmatic credentials (access key & secret key) with tenant-admin, AWS MemberFullAccess & IAMFullAccess permissions for the relevant project
 
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
@@ -46,7 +44,6 @@ Below is an example (not OOTB production-grade solution) for an EKS-D deployment
 
 
 ## Step 2: Automated EKS-D deployment (Terraform)
-
 * Go to the `rke2-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
     * Populate the sensitive variables (you may want to pass them at runtime rather than save them)
@@ -84,9 +81,13 @@ Below is an example (not OOTB production-grade solution) for an EKS-D deployment
     * Tag the existing private & public subnets for Load Balancer controller discovery
 * `terraform apply` - this will make the actual changes on the environment
 
-Once Terraform is over, you will need to get the kubeconfig file from the first master node - you can use the `get_kubeconfig.sh` script as mentioned on the `terraform output` in order to fetch the initial kubeconfig from the first master node (through the bastion) into the project's directory. 
+Once Terraform is over, you will need to get the kubeconfig file from the first master node - you can use the `get_kubeconfig.sh` script as mentioned on the `terraform output` in order to fetch the initial kubeconfig from the first master node (through the bastion) into the project's directory.
 
-Use the kubeconfig to connect to the Kubernetes cluster - it comes with the below OOTB deployments:
+Use the kubeconfig to connect to the Kubernetes cluster in the usual way - congratulations on your new cluster :) 
+
+## OOTB deployments
+Your cluster comes pre-deployed with the below utilities:
+
 * CCM - using the AWS Cloud Provider, providing you the below abilities:
     * Instances lifecycle updates (Kubernetes will be aware of new/removed Kubernetes nodes)
     * Instances information labeling (Kubernetes will show Instance information as node labels)
