@@ -14,4 +14,5 @@ resource "aws_instance" "bastion" {
   tags = {
     Name = "bastion"
   }
+  depends_on = [ aws_route.igw, aws_route_table_association.public_to_public ]
 }
