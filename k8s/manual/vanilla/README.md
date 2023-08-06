@@ -2,20 +2,17 @@
 Vanilla/EKS-D Kubernetes - manual deployment procedure
 ======================================================
 
-The below procedure demostrate how Zadara customers can deploy either vanilla or EKS-D Kubernetes on top of the Zadara cloud - please note this an example rather than a production-grade solution, specifically this is not an automated solution (although it can be automated in various ways). 
+The below procedure demostrate how Zadara customers can deploy either vanilla or EKS-D Kubernetes on top of the Zadara cloud - please note this an example rather than a production-grade solution, specifically this is **not** an automated solution (although it can be automated in various ways). 
+
+Known limitations
+-----------------
+* zCompute minimal version is **22.09.04** (previous versions don't support the EC2 API required by the AWS Cloud Provider for Kubernetes as an external CCM)
+* EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
+* EBS CSI snapshotting is not fully operational (will create more snapshots than needed and will not delete them upon snapshot removal)
 
 
 zCompute prerequisites
 ----------------------
-    
-* zCompute minimal version is **22.09 SP4**
-
-* Known limitations (for 22.09 SP4)   
-    * zCompute must have a valid cluster certificate (with a full chain in the PEM file) in order for the AWS Cloud Provider to respect it
-    * Terraform will not tag resources on first apply (requires second apply)
-    * EBS CSI requires UDEV modification (allowing API call to be made upon new volume attachment)
-    * EBS CSI snapshotting is not fully operational (will create more snapshots than needed and will not delete them upon snapshot removal)
-
 * Infrastructure considerations
     * Pre-configured VPC with a public subnet (using routing table and Internet-Gateway) is the minimal requirement, private subnet is advised for all internal components          
     * The below instructions assume IAM role with the [relevant permissions](https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies "https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies") (EC2, ASG, ELB, etc.) exist and attached to an instance profile which is assigned to all relevant VMs (control & data planes)
