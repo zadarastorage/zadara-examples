@@ -242,7 +242,7 @@ Control-plane installation
         
     *   Add the required tag `kubernetes.io/cluster/{kubernetes-name}=owned` (the default cluster name is “kubernetes” as mentioned before, and it is advised to rename as it may become an issue with more than a single cluster per zCompute account) to the relevant cloud resources via the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html "https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html") or zCompute GUI:  
         ```shell
-        aws --endpoint-url=https://{zcompute-api}/api/v2/ec2/ ec2 create-tags --resources {resource-id} --tags Key=kubernetes.io/cluster/{kubernetes-name},Value=owned
+        aws --region us-east-1 --endpoint-url=https://{zcompute-api}/api/v2/ec2/ ec2 create-tags --resources {resource-id} --tags Key=kubernetes.io/cluster/{kubernetes-name},Value=owned
         ```
         
         *   VM instance
@@ -256,9 +256,9 @@ Control-plane installation
         apiVersion: v1
         kind: ConfigMap
         metadata:
-        name: cloud-config
+          name: cloud-config
         data:
-        cloud.conf: |
+          cloud.conf: |
             [Global]
             Zone=us-east-1-az1
             [ServiceOverride "ec2"]
@@ -299,15 +299,15 @@ Control-plane installation
         - --cluster-name={kubernetes-name, for example kubernetes}
         - --configure-cloud-routes=false
         image:
-            tag: {relevant image version for your EKS-D, for example v1.27.1}
+          tag: {relevant image version for your EKS-D, for example v1.27.1}
         cloudConfigPath: config/cloud.conf
         extraVolumes:
         - name: cloud-config
-            configMap:
+          configMap:
             name: cloud-config
         extraVolumeMounts:
         - name: cloud-config
-            mountPath: config
+          mountPath: config
         EOF
         ```
         
@@ -562,7 +562,7 @@ EBS CSI
         controller:
         env:
             - name: AWS_EC2_ENDPOINT
-            value: 'https://{zCompute_hostname}/api/v2/aws/ec2'
+              value: 'https://{zCompute_hostname}/api/v2/aws/ec2'
         EOF
         ```
         
