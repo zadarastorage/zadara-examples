@@ -103,30 +103,12 @@ Use the kubeconfig to connect to the Kubernetes cluster - it comes with the belo
     * The snapshotting abilities are pre-configured with the `csi-aws-vsc` VolumeSnapshotClass
 
 ## Optional: Make your own EKS-D image (Packer)
-Inside the packer folder you will find a build project which will allow you to build the EKS-D image directly on the zCompute system, using the bastion VM. 
- 
-* Utilize the access & secret key you created before as part of the AWS CLI default profile, or set the below environment variables:
-  `export AWS_ACCESS_KEY_ID={access_key}`
-  `export AWS_SECRET_ACCESS_KEY={secret_key}`
-  `export AWS_DEFAULT_REGION=symphony`
+Only relevant if you wish to bake your own EKS-D image
 
-* Copy or rename `.auto.pkrvars.template.hcl` to `.auto.pkrvars.hcl` and provide all required variables inside it.
-  The following parameters should be provided:
-   * `api_endpoint` - IP address or hostname of the zCompute API
-   * `ssh_bastion_username` - the bastion user
-   * `bastion_public_ip` - the bastion public IP
-   * `ami_id` - AMI ID of a valid and accessible Ubuntu 22.04 machine image in zCompute's images
-   * `ssh_username` - ssh username for the image
-   * `subnet_id` - Subnet ID to provision the builder in (public subnet)
-   * `ssh_keypair_name` - Keypair name to use for the builder
-   * `private_keypair_path` - local path to the SSH private key (will be used by packer script to login in to the bastion and builder instances)
-
-* Run the packer command using: 
-  ```shell
-  packer init .
-  packer build .
-  ```
-
+* Requires importing the Ubuntu 22.04 image from the Marketplace to be used as the base image for EKS-D
+* Requires a temporary use of the bastion VM (or any other VM on the public subnet) - you will need to use the bastion's private key
+* Requires a local/remote environment with access to the bastion's public IP
+* See the packer project [documentation](eksd-packer/README.md) for more details
 
 ## Optional: Zadara CSI
 Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes

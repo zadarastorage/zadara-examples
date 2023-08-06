@@ -11,3 +11,6 @@ ssh_username         = "ubuntu"
 subnet_id            = "subnet-..."
 ssh_keypair_name     = "packer"
 private_keypair_path = "~/.ssh/bastion.pem"
+
+eksd_k8s_version     = "1-27"
+eksd_revision        = "9"
