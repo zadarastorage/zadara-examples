@@ -11,8 +11,7 @@ zCompute prerequisites
 * zCompute minimal version is **22.09 SP4**
 
 * Known limitations (for 22.09 SP4)   
-    * zCompute must have a valid cluster certificate (with a full chain in the PEM file) in order for the AWS Cloud Provider to run
-    * AWS Cloud Provider requires zCompute to be configured with a valid cluster certificate (including a full chain in the certificate PEM file)
+    * zCompute must have a valid cluster certificate (with a full chain in the PEM file) in order for the AWS Cloud Provider to respect it
     * Terraform will not tag resources on first apply (requires second apply)
     * EBS CSI requires UDEV modification (allowing API call to be made upon new volume attachment)
     * EBS CSI snapshotting is not fully operational (will create more snapshots than needed and will not delete them upon snapshot removal)
@@ -82,8 +81,8 @@ Kubernetes prerequisites
     sudo tee -a /etc/containerd/config.toml > /dev/null <<EOT
     version = 2
     [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
-    runtime_type = "io.containerd.runc.v2"
-    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+      runtime_type = "io.containerd.runc.v2"
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
         SystemdCgroup = true
     EOT
 
@@ -260,17 +259,17 @@ Control-plane installation
         data:
           cloud.conf: |
             [Global]
-            Zone=us-east-1-az1
+             Zone=us-east-1-az1
             [ServiceOverride "ec2"]
-            Service=ec2
-            Region=us-east-1
-            URL=https://{zCompute-URL}/api/v2/aws/ec2
-            SigningRegion=us-east-1
+             Service=ec2
+             Region=us-east-1
+             URL=https://{zCompute-URL}/api/v2/aws/ec2
+             SigningRegion=us-east-1
             [ServiceOverride "elasticloadbalancing"]
-            Service=elasticloadbalancing
-            Region=us-east-1
-            URL=https://{zCompute-URL}/api/v2/aws/elbv2
-            SigningRegion=us-east-1
+             Service=elasticloadbalancing
+             Region=us-east-1
+             URL=https://{zCompute-URL}/api/v2/aws/elbv2
+             SigningRegion=us-east-1
         EOF
         ```
         
@@ -412,8 +411,8 @@ If you wish to create an HA-based cluster instead of a single control-plane node
 
         until kubeadm join <LB-public-ip>:6443 --token 123456.1234567890123456 --discovery-token-unsafe-skip-ca-verification --control-plane --certificate-key <key>  >& /dev/null; [[ $? -eq 0 ]];
         do
-        echo "Result unsuccessful"
-        sleep 5
+          echo "Result unsuccessful"
+          sleep 5
         done
         ```
         
@@ -462,8 +461,8 @@ If you wish to add data-plane (worker) nodes to your Kubernetes cluster:
 
         until kubeadm join 10.0.0.22:6443 --token 123457.1234567890123457 --discovery-token-unsafe-skip-ca-verification  >& /dev/null; [[ $? -eq 0 ]];
         do
-        echo "Result unsuccessful"
-        sleep 5
+          echo "Result unsuccessful"
+          sleep 5
         done
         EOF
         ```
