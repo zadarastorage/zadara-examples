@@ -1,0 +1,14 @@
+api_endpoint                       = ""
+environment                        = ""
+bastion_keyname                    = ""
+bastion_keyfile                    = ""
+bastion_ami                        = ""
+bastion_user                       = ""
+eksd_ami                           = ""
+masters_keyname                    = ""
+masters_keyfile                    = ""
+workers_keyname                    = ""
+workers_keyfile                    = ""
+
+# Masters NLB private & public IP to be automatically populated below
+

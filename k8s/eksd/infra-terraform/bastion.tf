@@ -8,7 +8,7 @@ resource "aws_eip" "bastion" {
 resource "aws_instance" "bastion" {
   ami                    = var.bastion_ami
   instance_type          = var.bastion_instance_type
-  key_name               = var.bastion_key_name
+  key_name               = var.bastion_keyname
   subnet_id              = aws_subnet.eksd_public.id
   vpc_security_group_ids = [aws_security_group.eksd_k8s.id]
   tags = {

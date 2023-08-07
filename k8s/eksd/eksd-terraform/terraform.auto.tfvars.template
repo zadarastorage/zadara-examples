@@ -14,10 +14,10 @@ masters_load_balancer_internal_dns = ""
 masters_load_balancer_public_ip    = ""
 masters_load_balancer_private_ip   = ""
 
-eksd_ami_id                        = "ami-..."
+eksd_ami                        = "ami-..."
 
-masters_key_name                   = ""
-workers_key_name                   = ""
+masters_keyname                   = ""
+workers_keyname                   = ""
 
 masters_instance_type              = "z4.large"
 workers_instance_type              = "z4.large"

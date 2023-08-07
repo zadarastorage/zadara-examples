@@ -17,13 +17,29 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * Key-Pair for the worker agents (can be the same)
     * AWS programmatic credentials (access key & secret key) with tenant-admin, AWS MemberFullAccess & IAMFullAccess permissions for the relevant project
 
+## All-In-One deployment
+* Copy the `terraform.tfvars.template` file to `terraform.tfvars` and edit the parameters:
+    * `api_endpoint` - the URL/IP of the zCompute cluster
+    * `environment` - prefix for the various resources to be created (defaults to "k8s")
+    * `bastion_keyname` - the bastion Key-Pair name
+    * `bastion_keyfile` - the bastion Key-Pair private PEM file location
+    * `bastion_ami` - the Ubuntu/CentOS bastion image AMI (AWS ID)
+    * `bastion_user` - depending on the bastion AMI (either ubuntu or centos)
+    * `eksd_ami` - the pre-baked EKS-D image AMI (AWS ID)
+    * `masters_keyname` - the masters Key-Pair name
+    * `masters_keyfile` - the masters Key-Pair private PEM file location
+    * `workers_keyname` - the workers Key-Pair name
+    * `workers_keyfile` - the workers Key-Pair private PEM file location
+* Run the `run-all.sh` script with the additional parameters of your access_key & secret_key
+* Skip the next two steps :) 
+
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
     * `api_endpoint` - the URL/IP of the zCompute cluster
     * `cluster_access_key` - the tenant admin access key
     * `cluster_access_secret_id` - the tenant admin secret key
-    * `bastion_key_name` - the Key-Pair for the bastion
+    * `bastion_keyname` - the Key-Pair for the bastion
     * `bastion_ami` - the Ubuntu/CentOS bastion image AMI (AWS ID)
     * `environment` - prefix for the various resources to be created (defaults to "k8s")
 * `terraform init` - this will initialize Terraform for the environment

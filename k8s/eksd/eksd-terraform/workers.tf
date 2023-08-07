@@ -15,10 +15,10 @@ module "workers_asg" {
   source              = "./modules/asg"
   cluster_name        = var.environment
   group_name          = "${var.environment}-worker"
-  image_id            = var.eksd_ami_id
+  image_id            = var.eksd_ami
   instance_type       = var.workers_instance_type
   instance_profile    = local.workers_instance_profile
-  key_pair_name       = var.workers_key_name
+  key_pair_name       = var.workers_keyname
   eksd_masters_lb_url = local.lb_url
   eksd_token          = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
   is_worker           = true

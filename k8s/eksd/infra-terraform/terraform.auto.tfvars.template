@@ -1,6 +1,6 @@
 api_endpoint             = ""
 cluster_access_key       = ""
 cluster_access_secret_id = ""
-bastion_key_name         = ""
+bastion_keyname         = ""
 bastion_ami              = "ami-..."
 environment              = "k8s"

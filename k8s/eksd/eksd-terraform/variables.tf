@@ -19,25 +19,29 @@ variable "environment" {
   description = "Kubernetes cluster name (to be used in tags as well as Kubernetes-related resource prefix)"
 }
 
-variable "eksd_ami_id" {
+variable "eksd_ami" {
   type        = string
   description = "AWS id of the EKS-D image to be used for all Kubernetes nodes"
 }
 
 variable "masters_volume_size" {
   type = string
+  default = "50"
 }
 
 variable "workers_volume_size" {
   type = string
+  default = "100"
 }
 
 variable "masters_count" {
   type = number
+  default = 1
 }
 
 variable "workers_count" {
   type = number
+  default = 1
 }
 
 variable "masters_instance_type" {
@@ -72,11 +76,11 @@ variable "bastion_ip" {
   default     = ""
 }
 
-variable "workers_key_name" {
+variable "workers_keyname" {
   type = string
 }
 
-variable "masters_key_name" {
+variable "masters_keyname" {
   type = string
 }
 

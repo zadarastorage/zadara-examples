@@ -51,7 +51,7 @@ variable "expose_k8s_api_publicly" {
   description = "Whether or not to expose the Kubernetes API Server endpoint with a public IP"
 }
 
-variable "bastion_key_name" {
+variable "bastion_keyname" {
   type        = string
   description = "Key-pair name to be used in order to access the bastion"
 }
