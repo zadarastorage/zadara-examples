@@ -14,12 +14,12 @@ Known limitations
 zCompute prerequisites
 ----------------------
 * Infrastructure considerations
-    * Pre-configured VPC with a public subnet (using routing table and Internet-Gateway) is the minimal requirement, private subnet is advised for all internal components          
+    * Pre-configured VPC with a public subnet (using routing table and Internet-Gateway) is the minimal requirement, private subnet is advised for all internal components - you can use the VPC wizard to create the neccessary network topology
     * The below instructions assume IAM role with the [relevant permissions](https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies "https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies") (EC2, ASG, ELB, etc.) exist and attached to an instance profile which is assigned to all relevant VMs (control & data planes)
-    * You can use the k8s-friendly [infrastructure automation](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform "https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform") which provides the relevant network & IAM preparations
+    * You can use the k8s-friendly [infrastructure automation](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform "https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform") which provides the relevant network & IAM preparations, or create it manually
 
 * Control-Plane VM considerations
-    * OS should be Linux (below instructions assume Ubuntu 22.04)
+    * OS should be Linux (below instructions assume Ubuntu 22.04) - make sure to download the relevant OS image
     * Subnet can be private or public depending on VPC considerations (below instructions assume public)
     * Size recommendation is z4.large minimum with at least 25GB of disk space
         
@@ -105,7 +105,7 @@ Kubernetes prerequisites
     
 *   Note: In releases older than Debian 12 and Ubuntu 22.04, `/etc/apt/keyrings` does not exist by default. You can create this directory if you need to, making it world-readable but writeable only by admins.
         
-*   Override the original binaries with the ones compatible to your desired EKS-D [release](https://github.com/aws/eks-distro#releases "https://github.com/aws/eks-distro#releases") (check the relevant URI in the manifest), for example for deploying EKS-D 1.27 release #8 which is currently the latest and based on Kubernetes 1.27.3:
+*   For EKS-D, override the original binaries with the ones compatible to your desired EKS-D [release](https://github.com/aws/eks-distro#releases "https://github.com/aws/eks-distro#releases") (check the relevant URI in the manifest), for example for deploying EKS-D 1.27 release #8 which is currently the latest and based on Kubernetes 1.27.3:
     ```shell
     cd /usr/bin
     sudo rm kubelet kubeadm kubectl
@@ -126,12 +126,12 @@ Control-plane installation
 
 *   Note that kubeadm search for images based on [naming conventions](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#custom-images "https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#custom-images") which in some cases are not honored by EKS-D and we need to align them one way or another:
     
-    *   Use the kubeadm image pull/list commands to make sure all images are available - specifically pause, etcd & coredns have naming compatibility issue and requires local re-tagging:  
+    *   Run `sudo kubeadm config images pull` (or `list`) to make sure all images are available - for EKS-D you'll need to prodive the AWS image repository & EKS-D release, for example:  
         ```shell
         sudo kubeadm config images pull --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8
         ```
         
-    *   If you try to pull the images you will find some are “missing” - specifically we need to make sure etcd & coredns will be “corrected” per the EKS-D manifest. We can workaround the issue in 2 possible ways:
+    *   If you try to pull the EKS-D images you will find some are “missing” due to naming conventions - specifically we need to make sure etcd & coredns will be “corrected” per the EKS-D manifest. We can workaround the issue in 2 possible ways:
         
         *   Pre-pull and re-tag the relevant images locally (as suggested on the [EKS-D docs](https://distro.eks.amazonaws.com/users/install/kubeadm-onsite/#set-up-a-control-plane-node "https://distro.eks.amazonaws.com/users/install/kubeadm-onsite/#set-up-a-control-plane-node") in step 3 and [other examples](https://aws.amazon.com/blogs/storage/running-kubernetes-cluster-with-amazon-eks-distro-across-aws-snowball-edge/ "https://aws.amazon.com/blogs/storage/running-kubernetes-cluster-with-amazon-eks-distro-across-aws-snowball-edge/")) - although the documented docker-based approach requires docker as well as AWS [authentication](https://docs.aws.amazon.com/AmazonECR/latest/public/getting-started-cli.html#cli-authenticate-registry "https://docs.aws.amazon.com/AmazonECR/latest/public/getting-started-cli.html#cli-authenticate-registry"))
             
@@ -148,8 +148,8 @@ Control-plane installation
         
 *   Initialize kubeadm
     
-    *   Run the initialization with the EKS-D specs and the targeted internal pods network CIDR (here we use 10.244.0.0/16):  
-        `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16`
+    *   Run the kubeadm initialization with the targeted internal pods network CIDR (here we use 10.244.0.0/16) and again the optional EKS-D parameters if relevant:  
+        `sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8`
         
     * For public-facing Kubernetes clusters, assuming your control plane VM has an additional public IP, you may want to add the `--apiserver-cert-extra-sans` flag with the relevant IP address so later on you can refer to that IP as an alternative server address which will be respected by the server certificate. 
 
@@ -377,8 +377,8 @@ If you wish to create an HA-based cluster instead of a single control-plane node
         
     *   Add all relevant control-plane VMs as targets (you can start with the initial seeder VM and later add the rest)
         
-*   Initialize the cluster using the LB private IP as the control-plane endpoint, add the public IP as an alternative SAN (if relevant, only for public-facing clusters) and upload the cluster certificates as a 2-hours TTL secret:  
-    `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-private-ip>:6443 --apiserver-cert-extra-sans <LB-public-ip> --upload-certs`
+*   Initialize the cluster using the LB private IP as the control-plane endpoint, add the public IP as an alternative SAN (if relevant, only for public-facing clusters) and upload the cluster certificates as a 2-hours TTL secret - use the EKS-D parameters if relevant:  
+    `sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-private-ip>:6443 --apiserver-cert-extra-sans <LB-public-ip> --upload-certs --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8`
     
 *   Continue with the cluster deployment as usual - note the kubeconfig file will reflect the LB private IP as the api server URL and you may want to change it to the public IP (so you wouldn’t need to proxy into it for remote access)
     
