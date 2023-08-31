@@ -7,6 +7,7 @@ The below procedure demostrate how Zadara customers can deploy either vanilla or
 Known limitations
 -----------------
 * zCompute minimal version is **22.09.04** (previous versions don't support the EC2 API required by the AWS Cloud Provider for Kubernetes as an external CCM)
+* For zCompute version 22.09.04, the maximal AWS CCM release to support NLB is `v1.25.3` (later zCompute versions can use any AWS CCM release)
 * EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
 * EBS CSI snapshotting is not fully operational (will create more snapshots than needed and will not delete them upon snapshot removal)
 
@@ -15,13 +16,27 @@ zCompute prerequisites
 ----------------------
 * Infrastructure considerations
     * Pre-configured VPC with a public subnet (using routing table and Internet-Gateway) is the minimal requirement, private subnet is advised for all internal components - you can use the VPC wizard to create the neccessary network topology
-    * The below instructions assume IAM role with the [relevant permissions](https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies "https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies") (EC2, ASG, ELB, etc.) exist and attached to an instance profile which is assigned to all relevant VMs (control & data planes)
-    * You can use the k8s-friendly [infrastructure automation](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform "https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform") which provides the relevant network & IAM preparations, or create it manually
+    * Pre-configured AWS Role with the [relevant policies](https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies "https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies") (EC2, ASG, ELB, etc.) - you can just use the managed policies of `AmazonEC2FullAccess`, `ElasticLoadBalancingFullAccess` & `AutoScalingFullAccess` and add them to a new Role with a simple name (without spaces) for clarity
+    * Pre-configured AWS Instance Profile with the previous Role added to - assuming you have an AWS CLI [installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) & configured you can run the below to create it: 
+      ```shell
+      aws iam --endpoint-url https://{zcompute-api}/api/v2/aws/iam/ create-instance-profile --instance-profile-name {name}
+      aws iam --endpoint-url https://{zcompute-api}/api/v2/aws/iam/ add-role-to-instance-profile --instance-profile-name {name} --role-name {role-name}
+      ```
 
-* Control-Plane VM considerations
-    * OS should be Linux (below instructions assume Ubuntu 22.04) - make sure to download the relevant OS image
-    * Subnet can be private or public depending on VPC considerations (below instructions assume public)
-    * Size recommendation is z4.large minimum with at least 25GB of disk space
+* VM considerations
+    * The Operating System should be Linux-based (below instructions assume Ubuntu 22.04) - make sure to download the relevant OS image from the Marketplace
+    * Subnet can be private or public depending on the desired network topology (for private subnets, create a bastion on the public subnet and use it to ssh into the private one)
+    * Make sure to update the relevant Security Group and allow relevant communication rules - specifically ports 22 (for SSH) and 6443 (for Kubernetes API server)
+    * The minimal recommendation for instance type is z4.large
+    * The minimal recommendation for root disk size is 25GB
+    * Once the instance is created, get its AWS ID and associate it with the aforementioned Instance Profile - you can use the below AWS CLI commands: 
+      ```shell
+      # This will get you the Instance Profile's ARN based on its name:
+      aws iam --endpoint-url https://{zcompute-api}/api/v2/aws/iam/ get-instance-profile --instance-profile-name {name} --query 'InstanceProfile.Arn'
+      
+      # This will associate the Instance Profile with the VM based on the VM's instance ID:
+      aws ec2 --endpoint-url https://{zcompute-api}/api/v2/aws/ec2/ associate-iam-instance-profile --iam-instance-profile Arn={ARN},Name={name} --instance-id {instance-id}
+      ```
         
 
 Kubernetes prerequisites
@@ -295,7 +310,7 @@ Control-plane installation
         - --cluster-name={kubernetes-name, for example kubernetes}
         - --configure-cloud-routes=false
         image:
-          tag: {relevant image version for your EKS-D, for example v1.27.1}
+          tag: {relevant image version for your zCompute/EKS-D, for example v1.25.3}
         cloudConfigPath: config/cloud.conf
         extraVolumes:
         - name: cloud-config
