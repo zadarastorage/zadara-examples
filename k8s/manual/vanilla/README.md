@@ -244,7 +244,7 @@ Control-plane installation
         export INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
         # Change the kubelet service configuration to use the new settings
-        sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", $(systemctl show kubelet | grep DropInPaths | cut -d= -f 2)
 
         # Restart kubelet with the new config
         sudo systemctl daemon-reload
@@ -444,7 +444,7 @@ If you wish to add data-plane (worker) nodes to your Kubernetes cluster:
     export INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
     # Change the kubelet service configuration
-    sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", $(systemctl show kubelet | grep DropInPaths | cut -d= -f 2)
 
     # Restart kubelet with the new config
     sudo systemctl daemon-reload
