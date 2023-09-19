@@ -60,6 +60,6 @@ variable "eksd_k8s_version" {
 
 variable "eksd_revision" {
   type        = string
-  default     = "8"
+  default     = "12"
   description = "RKE2 release revision"
 }
