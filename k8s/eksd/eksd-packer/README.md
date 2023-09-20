@@ -1,16 +1,6 @@
 # Zadara-baked images for EKS-D
 The Zadara `eksd-packer` project can be used by any customer to bake various [EKS-D releases](https://github.com/aws/eks-distro/blob/main/README.md#releases) and manipulate them as needed. 
 
-## Importing a pre-backed image Zadara cloud
-Below is a list of pre-baked images ready for download from Zadara's public NGOS (S3 equivalent) to any Zadara cloud (Images --> Create Image --> Create image from URL).
-
-### Kubernetes 1-27
-
-| EKS-D Release | Kubernetes Version | Zadara Image |
-| --- | --- | --- |
-| [v1-27-eks-9](https://github.com/aws/eks-distro/releases/tag/v1-27-eks-9) | [v1.27.4](https://github.com/kubernetes/kubernetes/release/tag/v1.27.4) | [eksd-ubuntu-1691311496_1-27-9.qcow2](https://vsa-00000029-public-il-interoplab-01.zadarazios.com/v1/AUTH_c30037d11ae04ddc870ff416bde88609/zadara-public/k8s-images/eksd-beta/eksd-ubuntu-1691311496_1-27-9.qcow2) |
-| [v1-27-eks-8](https://github.com/aws/eks-distro/releases/tag/v1-27-eks-8) | [v1.27.3](https://github.com/kubernetes/kubernetes/release/tag/v1.27.3) | [eksd-ubuntu-1690746505_1-27-8.qcow2](https://vsa-00000029-public-il-interoplab-01.zadarazios.com/v1/AUTH_c30037d11ae04ddc870ff416bde88609/zadara-public/k8s-images/eksd-beta/eksd-ubuntu-1690746505_1-27-8.qcow2) |
-
 ## Baking an image within Zadara cloud
 Inside the `eksd-packer` folder you will find an [HashiCorp Packer](https://www.packer.io/) project which will allow you to build the EKS-D image directly on the zCompute system, using the bastion VM. 
  

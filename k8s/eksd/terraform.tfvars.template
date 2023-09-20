@@ -9,6 +9,3 @@ masters_keyname                    = ""
 masters_keyfile                    = ""
 workers_keyname                    = ""
 workers_keyfile                    = ""
-
-# Masters NLB private & public IP to be automatically populated below
-

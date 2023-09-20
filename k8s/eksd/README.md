@@ -8,9 +8,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 ## Prerequisites: zCompute
 * Images:
     * Ubuntu 22.04 (or CentOS 7) image should be imported from the Marketplace to be used for the Bastion VM
-    * Zadara's pre-baked EKS-D image should be imported from the below URL to be used for the Kubernetes nodes: \
-      `https://tlv-public.s3.il-central-1.amazonaws.com/eksd-ubuntu-1690746505_1-27-8.disk1.qcow2` \
-      (you may find other pre-baked images listed [here](eksd-packer/README.md#importing-a-pre-backed-image-zadara-cloud))
+    * Zadara's pre-baked EKS-D image should be imported from the Marketplace to be used for the Kubernetes nodes
 * Credentials:
     * Key-pair for the bastion server (either import or create a new one)
     * Key-Pair for the master servers (can be the same)
@@ -30,7 +28,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * `masters_keyfile` - the masters Key-Pair private PEM file location
     * `workers_keyname` - the workers Key-Pair name
     * `workers_keyfile` - the workers Key-Pair private PEM file location
-* Run the `run-all.sh` script with the additional parameters of your access_key & secret_key
+* Run the `apply-all.sh` script with the additional parameters of your access_key & secret_key
 * Skip the next two steps :) 
 
 ## Step 1: Automated infrastructure deployment (Terraform)
