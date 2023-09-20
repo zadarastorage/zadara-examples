@@ -44,6 +44,14 @@ write_files:
         podSubnet: "${ pod_network }"
       kubernetesVersion: "KUBE_VER"
       controlPlaneEndpoint: "${ server_url }"
+      etcd:
+        local:
+          imageRepository: "public.ecr.aws/eks-distro/etcd-io"
+          imageTag: "ETCD_VER"
+          dataDir: "/var/lib/etcd"
+      dns:
+        imageRepository: "public.ecr.aws/eks-distro/coredns"
+        imageTag: "DNS_VER"
       apiServer:
         certSANs:
           %{~ for single_san in san ~}

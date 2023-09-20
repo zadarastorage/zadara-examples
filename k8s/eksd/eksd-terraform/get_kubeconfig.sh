@@ -21,19 +21,32 @@ master_keypair=$8
 
 # Copy the master keypair into the bastion and fix its permissions for further usage
 scp -i $bastion_keypair -o StrictHostKeyChecking=no $master_keypair $bastion_user@$bastion_ip:~/master_keypair.pem
-ssh $bastion_user@$bastion_ip "chmod 400 ~/master_keypair.pem"
+ssh -i $bastion_keypair $bastion_user@$bastion_ip "chmod 400 ~/master_keypair.pem"
 
-# SSH into the bastion in order to fetch the kubeconfig from the master node (can take a while)
-while ssh $bastion_user@$bastion_ip "scp -i ~/master_keypair.pem -o StrictHostKeyChecking=no ${master_user}@${master_hostname}:/etc/kubernetes/admin.conf ~/kubeconfig" >& /dev/null; [[ $? -ne 0 ]];
+# SSH into the bastion in order to fetch the kubeconfig from the master node (can take a while, loop up to 25 minutes)
+max_retry=300
+for i in {1.."$max_retry"}
 do
-    echo "Couldn't obtain the kubeconfig from the master node, sleeping before retrying"
+    ssh -i $bastion_keypair $bastion_user@$bastion_ip "scp -i ~/master_keypair.pem -o StrictHostKeyChecking=no ${master_user}@${master_hostname}:/etc/kubernetes/admin.conf ~/kubeconfig" >& /dev/null
+    if [[ $? -eq 0 ]];
+    then   
+        break
+    fi
+    echo "Couldn't obtain the kubeconfig from the master node, sleeping before retrying ($i out of $max_retry)"
     sleep 5
 done
 
-# Fetch the kubeconfig from the bastion and cleanup the temp files on the bastion
+# Fetch the kubeconfig from the bastion
 scp -i $bastion_keypair $bastion_user@$bastion_ip:~/kubeconfig ./kubeconfig.temp
-ssh -i $bastion_keypair $bastion_user@$bastion_ip "rm -f ~/kubeconfig ~/master_keypair.pem"
+if [[ $? -ne 0 ]];
+then
+    echo "Error: Cloudn't obtain the kubeconfig - check the bastion, ssh into the master node, run journalctl and look for kubeadm init errors)"
+    exit 1
+fi
 
 # Replace the original API-server endpoint from the internal IP to the pulic IP
 sed "s/${apiserver_private}/${apiserver_public}/g" ./kubeconfig.temp > ./kubeconfig
+
+# Cleanup
+ssh -i $bastion_keypair $bastion_user@$bastion_ip "rm -f ~/kubeconfig ~/master_keypair.pem"
 rm -f ./kubeconfig.temp

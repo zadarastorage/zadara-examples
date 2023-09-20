@@ -13,11 +13,17 @@ fi
 access_key=$1
 secret_key=$2
 
-# Step #1 - infrastructure automation
+# Step 0 - very basic check for leftovers...
+if test -f infra.tfvars; then
+    echo "previous infra.tfvars already exists - make sure to run destroy-all.sh before running apply-all.sh"
+    exit 1
+fi
+
+# Step 1 - infrastructure automation
 cd ./infra-terraform
 terraform init --reconfigure
-TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key terraform apply -compact-warnings --auto-approve -var-file ../terraform.tfvars
-TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key terraform apply -compact-warnings --auto-approve -var-file ../terraform.tfvars
+terraform apply -compact-warnings --auto-approve -var-file ../terraform.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
+terraform apply -compact-warnings --auto-approve -var-file ../terraform.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
 terraform output > ../infra.tfvars
 api_endpoint=$(terraform output -raw api_endpoint)
 bastion_ip=$(terraform output -raw bastion_ip)
@@ -34,19 +40,19 @@ bastion_keyfile=$(echo var.bastion_keyfile | terraform console | cut -d\" -f2)
     $access_key \
     $secret_key \
     $bastion_user \
-    $bastion_keyfile | tail -n 2 >> terraform.tfvars
+    $bastion_keyfile | tail -n 2 >> infra.tfvars
 
 # Step 2 - EKS-D deployment
 cd ./eksd-terraform
 terraform init --reconfigure
-TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key terraform apply --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars
-TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key terraform apply --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars
+terraform apply --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
+terraform apply --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
 master_hostname=$(terraform output -raw master_hostname)
 
 # Step 2.5 - Get kubeconfig
 cd ..
-masters_load_balancer_private_ip=$(echo var.masters_load_balancer_private_ip | terraform console | cut -d\" -f2)
-masters_load_balancer_public_ip=$(echo var.masters_load_balancer_public_ip | terraform console | cut -d\" -f2)
+masters_load_balancer_private_ip=$(echo var.masters_load_balancer_private_ip | terraform console -var-file infra.tfvars | tail -n 1 | cut -d\" -f2)
+masters_load_balancer_public_ip=$(echo var.masters_load_balancer_public_ip | terraform console -var-file infra.tfvars | tail -n 1 | cut -d\" -f2)
 master_keyfile=$(echo var.masters_keyfile | terraform console | cut -d\" -f2)
 master_user="ubuntu"
 ./eksd-terraform/get_kubeconfig.sh \
@@ -58,3 +64,4 @@ master_user="ubuntu"
     $bastion_keyfile \
     $master_user \
     $master_keyfile
+cat ./kubeconfig

@@ -18,9 +18,7 @@ KUBELET=$(yq '.status.components.[].assets.[] | select(.name=="bin/linux/amd64/k
 KUBECTL=$(yq '.status.components.[].assets.[] | select(.name=="bin/linux/amd64/kubectl") | .archive.uri' /tmp/manifest.yaml)
 KUBE_VER=$(yq '.status.components.[] | select(.name=="kubernetes") | .gitTag' /tmp/manifest.yaml)-eks-${EKSD_K8S_VERSION}-${EKSD_REVISION}
 COREDNS=$(yq '.status.components.[].assets.[] | select(.name=="coredns-image") | .image.uri' /tmp/manifest.yaml)
-COREDNS_VER=$(echo ${COREDNS%%-eks-*} | awk -F':' '{ print $2 }')
 ETCD=$(yq '.status.components.[].assets.[] | select(.name=="etcd-image") | .image.uri' /tmp/manifest.yaml)
-ETCD_VER=$(echo ${ETCD%%-eks-*} | awk -F':v' '{ print $2 }')
 
 # EKS-D binaries (overriding the original Kubernetes ones)
 sudo rm /usr/bin/kubelet /usr/bin/kubeadm /usr/bin/kubectl
@@ -34,8 +32,4 @@ sudo systemctl enable kubelet
 # attempting to gather all artifacts will fail due to bad coredns & etcd naming convention (known issue) but relevant for other images
 sudo kubeadm config images pull --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version $KUBE_VER || true
 sudo ctr --namespace k8s.io images pull $COREDNS
-sudo ctr --namespace k8s.io images tag $COREDNS public.ecr.aws/eks-distro/kubernetes/coredns:$COREDNS_VER
 sudo ctr --namespace k8s.io images pull $ETCD
-sudo ctr --namespace k8s.io images tag $ETCD public.ecr.aws/eks-distro/kubernetes/etcd:$ETCD_VER-0
-
-

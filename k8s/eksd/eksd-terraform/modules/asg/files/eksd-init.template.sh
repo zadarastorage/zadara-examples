@@ -103,7 +103,11 @@ local_cp_node_wait() {
     if [ $server_type = "leader" ]; then
       # Extract the exact Kubernetes version to install (get it from the already-pulled image - I know I know, it's lame...)
       kube_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/kubernetes/kube-apiserver:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
+      etcd_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/etcd-io/etcd:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
+      dns_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/coredns/coredns:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
       sudo sed -i s,KUBE_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
+      sudo sed -i s,ETCD_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
+      sudo sed -i s,DNS_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
 
       # Leader is initializing cluster
       info "Installing Kubernetes version $kube_ver"
@@ -120,7 +124,7 @@ local_cp_node_wait() {
       export KUBECONFIG=/etc/kubernetes/admin.conf
       kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
       kubectl apply -f /etc/kubernetes/zadara/cloud-config.yaml -n kube-system
-      helm install aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
+      helm install --namespace kube-system aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
 
       # Await for cluster nodes to be ready before continuing with additional deployments & declare cluster is up & running
       local_cp_node_wait
