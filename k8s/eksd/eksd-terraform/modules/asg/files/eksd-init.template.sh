@@ -106,8 +106,8 @@ local_cp_node_wait() {
       etcd_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/etcd-io/etcd:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
       dns_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/coredns/coredns:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
       sudo sed -i s,KUBE_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
-      sudo sed -i s,ETCD_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
-      sudo sed -i s,DNS_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
+      sudo sed -i s,ETCD_VER,$etcd_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
+      sudo sed -i s,DNS_VER,$dns_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
 
       # Leader is initializing cluster
       info "Installing Kubernetes version $kube_ver"

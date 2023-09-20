@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -ex
-
 # Validate the number of arguments
 if [ $# -ne 8 ]; then
     echo "Error: This script expects 8 arguments"
@@ -25,7 +23,7 @@ ssh -i $bastion_keypair $bastion_user@$bastion_ip "chmod 400 ~/master_keypair.pe
 
 # SSH into the bastion in order to fetch the kubeconfig from the master node (can take a while, loop up to 25 minutes)
 max_retry=300
-for i in {1.."$max_retry"}
+for (( i=1; i<=$max_retry; i++ ))
 do
     ssh -i $bastion_keypair $bastion_user@$bastion_ip "scp -i ~/master_keypair.pem -o StrictHostKeyChecking=no ${master_user}@${master_hostname}:/etc/kubernetes/admin.conf ~/kubeconfig" >& /dev/null
     if [[ $? -eq 0 ]];
