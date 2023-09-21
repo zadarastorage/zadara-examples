@@ -89,10 +89,10 @@ storageClasses:
   - name: ebs-sc
     annotations:
       storageclass.kubernetes.io/is-default-class: "true"
-volumeSnapshotClasses: []
+volumeSnapshotClasses: 
   - name: ebs-vsc
     annotations:
       snapshot.storage.kubernetes.io/is-default-class: "true"
-      k10.kasten.io/is-snapshot-class=true
+      k10.kasten.io/is-snapshot-class: "true"
     deletionPolicy: Delete
 EOF
