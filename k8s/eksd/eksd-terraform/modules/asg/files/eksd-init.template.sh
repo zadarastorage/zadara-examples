@@ -132,7 +132,7 @@ local_cp_node_wait() {
       kubectl apply $(ls /etc/kubernetes/zadara/*snapshot.storage.k8s.io_*.yaml | awk ' { print " -f " $1 } ')
       kubectl apply -n kube-system -f /etc/kubernetes/zadara/rbac-snapshot-controller.yaml
       kubectl apply -n kube-system -f /etc/kubernetes/zadara/setup-snapshot-controller.yaml
-      helm install aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+      helm install --namespace kube-system aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
     fi
 
     if [ $server_type = "server" ]; then 
