@@ -2,8 +2,9 @@
 Below is an example (not OOTB production-grade solution) for an EKS-D automated deployment over zCompute - facilitating cloud integration with ASG scaling, instance labeling & lifecycle, native load balancing and built-in storage abilities with the AWS EBS CSI driver. 
 
 ## Known limitations
-* zCompute minimal version is **23.08** (previous versions will not support the EKS-D initialization phase which is implemented in Step #2) 
+* zCompute minimal version is **23.08** (previous versions will not support the EKS-D initialization phase which is implemented in Step #2) in VSC-mode
 * EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
+* Upgraded zCompute clouds must have at least one AWS-compatible VolumeType API Alias to be available for provisioning (io1, io2, gp2, gp3, sc1, st1, standard, sbp1, sbg1)
 
 ## Prerequisites: zCompute
 * Images:
@@ -104,8 +105,8 @@ Your cluster comes pre-deployed with the below utilities:
 
 * CCM - using the AWS Cloud Provider, providing you the below abilities:
     * Instances lifecycle updates (Kubernetes will be aware of new/removed Kubernetes nodes)
-    * Instances information labeling (Kubernetes will show Instance information as node labels)
-    * LoadBalancer abilities (NLB only, for ALB you'll need to deploy the AWS Load Balancer Controller)
+    * Instances information labeling (Kubernetes will show EC2 Instance information as node labels)
+    * LoadBalancer [abilities](https://github.com/kubernetes/cloud-provider-aws/blob/master/docs/service_controller.md) (NLB only, for ALB you'll need to deploy the AWS Load Balancer Controller)
         * Add the below annotation for all LoadBalancer specifications: \
           `service.beta.kubernetes.io/aws-load-balancer-type: nlb`
         * Add the below annotation for all public-facing NLBs (the default is internal-facing): \
@@ -113,10 +114,8 @@ Your cluster comes pre-deployed with the below utilities:
 * CNI - using Flannel, providing basic pod networking abilities 
     * You may switch to Calico - TBD
 * CSI - using the EBS driver, providing block persistance abilities:
-    * The `ebs-cs` StorageClass is pre-configured (note it is not set as the default StorageClass, so you may override it with other CSIs)
-    * You can mark `ebs-sc` as the default (implicit) StorageClass by setting the `storageclass.kubernetes.io/is-default-class` annotation to `true`: \
-      `kubectl patch storageclass ebs-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'`
-    * The snapshotting abilities are pre-configured with the `csi-aws-vsc` VolumeSnapshotClass
+    * The `ebs-cs` StorageClass is pre-configured and set as the default StorageClass (you may [override](https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/) it with other CSIs)
+    * The snapshotting abilities are pre-configured with the `ebs-vsc` VolumeSnapshotClass (including the Kasten-ready [annotation](https://docs.kasten.io/latest/install/storage.html#csi-snapshot-configuration) for seamless operability)
 
 ## Optional: Make your own EKS-D image (Packer)
 Only relevant if you wish to bake your own EKS-D image
@@ -140,7 +139,6 @@ Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist da
     * [VPSA](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vpsa.yaml) configuration (there goes the VPSA address & the user's token)
 * Deploy a [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_storage.md) which will point to the VSCStorageClass (you might want to set it as the default storage class for simplicity)
 * Further CSI examples (like how to create a block/filesystem PVC, etc.) can be found [here](https://github.com/zadarastorage/zadara-csi/tree/release/deploy/examples)
-
 
 ## Optional: AWS Load Balancer controller
 Only relevant if you wish to use the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) for ingress controller
