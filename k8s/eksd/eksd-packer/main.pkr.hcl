@@ -89,7 +89,20 @@ build {
     ]
   }
 
-  # EKS-D artifacts (binaries & images)
+  # Add-ons artifacts (CNI, CSI, etc.)
+  provisioner "file" {
+    source      = "files/setup_addons.sh"
+    destination = "/tmp/setup_addons.sh"
+  }
+
+  provisioner "shell" {
+    inline = [
+      "sudo chmod +x /tmp/setup_addons.sh",
+      "sudo /tmp/setup_addons.sh",
+    ]
+  }
+
+  # EKS-D artifacts (Kubernetes, EKS-D, etc.)
   provisioner "file" {
     source      = "files/setup_eksd.sh"
     destination = "/tmp/setup_eksd.sh"
