@@ -25,22 +25,22 @@ variable "eksd_ami" {
 }
 
 variable "masters_volume_size" {
-  type = string
+  type    = string
   default = "50"
 }
 
 variable "workers_volume_size" {
-  type = string
+  type    = string
   default = "100"
 }
 
 variable "masters_count" {
-  type = number
+  type    = number
   default = 1
 }
 
 variable "workers_count" {
-  type = number
+  type    = number
   default = 1
 }
 
@@ -132,8 +132,52 @@ variable "worker_iam_role" {
   default     = null
 }
 
+variable "cni_provider" {
+  type        = string
+  default     = "flannel"
+  description = "CNI provider - choose from flannel, calico or cilium (experimental)"
+  validation {
+    condition     = contains(["flannel", "calico", "cilium"], var.cni_provider)
+    error_message = "Valid values for var: cni_provider are (flannel, calico, cilium)."
+  }
+}
+
 variable "pod_network" {
   type        = string
   description = "CIDR for internal Kubernetes pods network"
   default     = "10.244.0.0/16"
+}
+
+variable "ebs_csi_volume_type" {
+  type        = string
+  default     = "gp2"
+  description = "VolumeType alias (defaulting to gp2 in order to align with zCompute default VolumeType)"
+  validation {
+    condition     = contains(["io1", "io2", "gp2", "gp3", "sc1", "st1", "standard", "sbp1", "sbg1"], var.ebs_csi_volume_type)
+    error_message = "Valid values for var: ebs_csi_volume_type are (io1, io2, gp2, gp3, sc1, st1, standard, sbp1, sbg1)."
+  }
+}
+
+variable "install_ebs_csi" {
+  type        = bool
+  default     = true
+  description = "Addon: EBS CSI driver (installed by default)"
+}
+
+variable "install_lb_controller" {
+  type        = bool
+  default     = true
+  description = "Addon: AWS Load Balancer Controller (installed by default)"
+}
+
+variable "install_autoscaler" {
+  type        = bool
+  default     = true
+  description = "Addon: Cluster Autoscaler (installed by default)"
+}
+
+variable "install_kasten_k10" {
+  type        = bool
+  default     = true
+  description = "Addon: Kasten K10 (installed by default)"
 }

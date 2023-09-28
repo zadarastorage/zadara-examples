@@ -26,7 +26,7 @@ module "workers_asg" {
   subnet_ids          = [var.private_subnet_id]
   volume_size         = var.workers_volume_size
 
-  max_size     = 5
+  max_size     = var.workers_count+5
   min_size     = var.workers_count
   desired_size = var.workers_count
 
@@ -41,6 +41,14 @@ module "workers_asg" {
     },
     {
       key   = "kubernetes.io/cluster/${var.environment}"
+      value = "owned"
+    },
+    {
+      key   = "k8s.io/cluster-autoscaler/${var.environment}"
+      value = "owned"
+    },
+    {
+      key   = "k8s.io/cluster-autoscaler/enabled"
       value = "owned"
     }
   ]

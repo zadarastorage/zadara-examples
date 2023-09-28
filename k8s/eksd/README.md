@@ -7,6 +7,10 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 * Upgraded zCompute clouds must have at least one AWS-compatible VolumeType API Alias (io1 / io2 / gp2 / gp3 / sc1 / st1 / standard / sbp1 / sbg1) to be available for provisioning (fresh 23.08 installations have them OOTB)
 
 ## Prerequisites: zCompute
+* Storage:
+    * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command via its container (`docker run -it -e SYMP_URL=<zCompute URL> docker.io/stratoscale/symp-cli:latest`) using your zCompute account (domain) and credentials: \
+    `volume volume-types list -c name -c alias -c is_provisioning_disabled -c operational_state -c state -c health -m grep=ProvisioningEnabled` \
+    The EBS CSI will use gp2 as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable
 * Images:
     * Ubuntu 22.04 (or CentOS 7) image should be imported from the Marketplace to be used for the Bastion VM
     * Zadara's pre-baked EKS-D image should be imported from the Marketplace to be used for the Kubernetes nodes
@@ -29,8 +33,15 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * `masters_keyfile` - the masters Key-Pair private PEM file location
     * `workers_keyname` - the workers Key-Pair name
     * `workers_keyfile` - the workers Key-Pair private PEM file location
-* Run the `apply-all.sh` script with the additional parameters of your access_key & secret_key
-* Skip the next two steps :) 
+* Optionally add more variables to create a non-default deployment
+    * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values
+    * Any such variable can be added to this file in order to override a default value and facilitate a non-default All-In-One deployment
+    * For example, you can set the `ebs_csi_volume_type` to something other than gp2 per your storage preferences - either in the eksd-terraform project values or here as an override
+* Run the `apply-all.sh` script with the additional two parameters of your access_key & secret_key
+    * The script will take at least 5-10 minutes for a successful minimal deployment
+    * The script cannot be re-run, but once completed the internal Terraform projects are initialized and can be used as usual
+    * If neccessary, you can destroy all assets and reset everything with the `destroy-all.sh` script (with the same two credentials parameters)
+* Once completed you will see the kubeconfig content ready for your usage - you can skip the next two steps :) 
 
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
@@ -88,6 +99,11 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
         * `masters_instance_type` - the workers VM size (minimal is z2.large, suggested z8.xlarge)
         * `masters_volume_size` - the masters disk size (minimal is 25GB, suggested 100GB)
         * `workers_volume_size` - the workers disk size (minimal is 25GB, suggested 250GB)
+        * `ebs_csi_volume_type` - the cloud's storage VolumeType (defaulting to gp2)
+        * `install_ebs_csi` - whether to deploy the EBS CSI driver addon
+        * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon
+        * `install_autoscaler` - whether to deploy the Cluster Autoscaler addon
+        * `install_kasten_k10` - whether to deploy the Kasten K10 addon
 * `terraform init` - this will initialize Terraform for the environment
 * `terraform plan` - this will output the changes that Terraform will actually do (resource creation), for example:
     * EKS-D master nodes ASG + Launch Configuration
@@ -111,18 +127,46 @@ Your cluster comes pre-deployed with the below utilities:
           `service.beta.kubernetes.io/aws-load-balancer-type: nlb`
         * Add the below annotation for all public-facing NLBs (the default is internal-facing): \
           `service.beta.kubernetes.io/aws-load-balancer-internal: "false"`
-* CNI - using Flannel, providing basic pod networking abilities 
-    * You may switch to Calico - TBD
+* CNI - either Flannel (default), Calico or Cilium 
+    * [Flannel](https://github.com/flannel-io/flannel) - basic pod networking abilities, suitable for most use-cases
+    * [Calico](https://docs.tigera.io/) - advanced security (may require further configuration)
+    * [Cilium](https://cilium.io/) - eBPF-based networking with built-in observability (experimental)
+
+## Addons
+As an opt-out approach, unless defined otherwise your cluster comes pre-deployed with the latest versions of the below addons (you can also change/delete them via helm after the deployment):
+
 * CSI - using the EBS driver, providing block persistance abilities:
-    * The `ebs-cs` StorageClass is pre-configured and set as the default StorageClass (you may [override](https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/) it with other CSIs)
+    * The `ebs-cs` StorageClass is pre-configured with the VolumeType and set as the default StorageClass (you may [override](https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/) it with other CSIs)
     * The snapshotting abilities are pre-configured with the `ebs-vsc` VolumeSnapshotClass (including the Kasten-ready [annotation](https://docs.kasten.io/latest/install/storage.html#csi-snapshot-configuration) for seamless operability)
+* AWS Load Balancer Controller
+    * For NLB - use the LoadBalancer service per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
+      * Make sure to add the following annotations to the service - the first two are mandatory in order for the controller to function, and the third is only required for internet-facing NLB (as the default is internal):
+        ```yaml
+        service:
+          annotations:
+            service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+            service.beta.kubernetes.io/aws-load-balancer-type: external
+            service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+        ```
+      * As a [known limitation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/service/nlb/#security-group), the controller wouldn't create the relevant security group to the NLB - rather, it will add the relevant rules to the worker node's security group and you can attach this (or another) security group to the NLB via the zCompute GUI, AWS CLI or Symp
+    * For ALB - use the Ingress resource per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/ingress/annotations)
+      * Set the `ingressClassName` attribute per the controller class name (default is `alb`) 
+      * By default all Ingress resources are [internal-facing](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/ingress/annotations/#scheme) - if you want your ALB to get a public IP you will have to set the `alb.ingress.kubernetes.io/scheme` annotation to `internet-facing` (default value is `internal`)
+* Cluster Autoscaler
+    * The configuration is pre-populated to use the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) based on the pre-populated tags on the worker ASG (`k8s.io/cluster-autoscaler/enabled` and `k8s.io/cluster-autoscaler/<cluster-name>`) where cluster-name is the environment variable set on the eksd-terraform project
+    * If you opt to use the [manual mode](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#manual-configuration)  - remember to define the specific workers ASG/s name/s and their lower/upper bounds on the [autoscalingGroups](https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml#L39) values
+* Kasten K10
+    * The deployment assumes the EBS CSI addon is also installed (otherwise k10 will fail to load)
+    * The snapshotting ability is enabled OOTB (using the default `ebs-vsc` VolumeSnapshotClass)
+    * The export profile is not set OOTB - you will need to configure it in case you want to export the backups outside of zCompute
+    * Keep in mind that k10 is only free up to 5 worker nodes - please consult Kasten's [pricing](https://www.kasten.io/pricing) for anything above that
 
 ## Optional: Make your own EKS-D image (Packer)
 Only relevant if you wish to bake your own EKS-D image
 
 * Requires importing the Ubuntu 22.04 image from the Marketplace to be used as the base image for EKS-D
 * Requires a temporary use of the bastion VM (or any other VM on the public subnet) - you will need to use the bastion's private key
-* Requires a local/remote environment with access to the bastion's public IP
+* Requires a local/remote environment with access to the bastion's public IP and AWS access & secret keys to zCompute
 * See the packer project [documentation](eksd-packer/README.md) for more details
 
 ## Optional: Zadara CSI
@@ -139,59 +183,3 @@ Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist da
     * [VPSA](https://github.com/zadarastorage/zadara-csi/blob/release/deploy/examples/vpsa.yaml) configuration (there goes the VPSA address & the user's token)
 * Deploy a [Storage Class](https://github.com/zadarastorage/zadara-csi/blob/release/docs/configuring_storage.md) which will point to the VSCStorageClass (you might want to set it as the default storage class for simplicity)
 * Further CSI examples (like how to create a block/filesystem PVC, etc.) can be found [here](https://github.com/zadarastorage/zadara-csi/tree/release/deploy/examples)
-
-## Optional: AWS Load Balancer controller
-Only relevant if you wish to use the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) for ingress controller
-
-* Add the [AWS Load Balancer controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/tree/main/helm/aws-load-balancer-controller) Helm repo: \
-  <code>helm repo add eks [https://aws.github.io/eks-charts](https://aws.github.io/eks-charts)</code>
-* Create value file named <code>values.yaml</code> according to the below specification (remember to update all of the cluster's hostname parameters with the zCompute URL):
-  ```yaml
-  clusterName:  # cluster name (terraform's "environment" variable from step #3)
-  vpcId: # cluster's vpc id
-  awsApiEndpoints: "ec2=https://<cluster_hostname>/api/v2/aws/ec2,elasticloadbalancing=https://<cluster_hostname>/api/v2/aws/elbv2,acm=https://<cluster_hostname>/api/v2/aws/acm,sts=https://<cluster_hostname>/api/v2/aws/sts"
-  enableShield: false
-  enableWaf: false
-  enableWafv2: false
-  region: eu-west-1
-  ```
-* Deploy the controller: \
-  <code>helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -f values.yaml -n kube-system</code>
-* For NLB - use the LoadBalancer service per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
-  * Make sure to add the following annotations to the service - the first two are mandatory in order for the controller to function, and the third is only required for internet-facing NLB (as the default is internal):
-    ```yaml
-    service:
-      annotations:
-        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-        service.beta.kubernetes.io/aws-load-balancer-type: external
-        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    ```
-  * As a [known limitation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/nlb/#security-group), the controller wouldn't create the relevant security group to the NLB - rather, it will add the relevant rules to the worker node's security group and you can attach this (or another) security group to the NLB via the zCompute GUI, AWS CLI or Symp
-* For ALB - use the Ingress resource per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/ingress/annotations)
-  * Set the `ingressClassName` attribute per the controller class name (default is `alb`) 
-  * By default all Ingress resources are [internal-facing](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/ingress/annotations/#scheme) - if you want your ALB to get a public IP you will have to set the `alb.ingress.kubernetes.io/scheme` annotation to `internet-facing` (default value is `internal`)
-
-
-## Optional: Cluster auto-scaler
-Only relevant if you wish to enable the Kubernetes [cluster autoscaler](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md) and dynamically control your worker nodes scaling
-
-* Add the [cluster-autoscaler](https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler) Helm repo: \
-  <code>helm repo add autoscaler https://kubernetes.github.io/autoscaler</code>
-* Make sure you use the latest cluster-autoscaler release (zCompute support was introduced in 1.26.0 but 1.24.0 is still the default image tag on the chart)
-* Configure cluster-autoscaler for AWS per [the documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#cluster-autoscaler-on-aws)
-  * The default `cloudProvider` value is `aws` so no need to change that
-  * If you opt to use the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) - remember to add the relevant tags on the relevant ASG/s (either from zCompute GUI, AWS CLI or Symp) - the default ones are `k8s.io/cluster-autoscaler/enabled` and `k8s.io/cluster-autoscaler/<cluster-name>` where cluster-name is the environment variable set on the rke2-terraform project
-  * If you opt to use the [manual mode](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#manual-configuration)  - remember to define the specific workers ASG/s name/s and their lower/upper bounds on the [autoscalingGroups](https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml#L39) values
-* Make sure your values refer to the pre-populated cloud-config ConfigMap as mentioned on the [documentation](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#using-cloud-config-with-helm):
-    ```yaml
-    cloudConfigPath: config/cloud.conf
-
-    extraVolumes:
-      - name: cloud-config
-        configMap:
-          name: cloud-config
-
-    extraVolumeMounts:
-      - name: cloud-config
-        mountPath: config
-    ```

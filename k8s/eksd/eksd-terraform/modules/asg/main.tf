@@ -6,26 +6,34 @@ data "cloudinit_config" "this" {
   part {
     filename     = "cloud-config.yaml"
     content_type = "text/cloud-config"
-    content      = templatefile("${path.module}/files/cloudinit-server.template.yaml", {
-      token         = var.eksd_token
-      server_url    = var.eksd_masters_lb_url
-      cluster_name  = var.cluster_name
-      pod_network   = var.pod_network
-      certificate   = var.eksd_certificate
-      san           = var.eksd_san
+    content = templatefile("${path.module}/files/cloudinit-server.template.yaml", {
+      token        = var.eksd_token
+      server_url   = var.eksd_masters_lb_url
+      cluster_name = var.cluster_name
+      pod_network  = var.pod_network
+      certificate  = var.eksd_certificate
+      san          = var.eksd_san
     })
   }
 
   # Unified initialization script for servers & workers
   part {
     content_type = "text/x-shellscript"
-    content      = templatefile("${path.module}/files/eksd-init.template.sh", {
-      type          = var.is_worker ? "worker" : "server"
-      token         = var.eksd_token
-      asg_name      = var.group_name
-      server_url    = var.eksd_masters_lb_url
-      pod_network   = var.pod_network
-      certificate   = var.eksd_certificate
+    content = templatefile("${path.module}/files/eksd-init.template.sh", {
+      type                  = var.is_worker ? "worker" : "server"
+      token                 = var.eksd_token
+      asg_name              = var.group_name
+      server_url            = var.eksd_masters_lb_url
+      certificate           = var.eksd_certificate
+      cluster_name          = var.cluster_name
+      cni_provider          = var.cni_provider
+      pod_network           = var.pod_network
+      install_ebs_csi       = var.install_ebs_csi
+      ebs_csi_volume_type   = var.ebs_csi_volume_type
+      install_lb_controller = var.install_lb_controller
+      vpc_id                = var.vpc_id
+      install_autoscaler    = var.install_autoscaler
+      install_kasten_k10    = var.install_kasten_k10
     })
   }
 

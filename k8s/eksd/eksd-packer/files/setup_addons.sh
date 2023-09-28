@@ -71,6 +71,8 @@ storageClasses:
   - name: ebs-sc
     annotations:
       storageclass.kubernetes.io/is-default-class: "true"
+    parameters:
+      type: "gp2"
 volumeSnapshotClasses: 
   - name: ebs-vsc
     annotations:
@@ -86,7 +88,27 @@ sudo helm template kasten/k10 | grep image: | sed 's/image://' | sudo xargs ctr 
 # AWS Load Balancer Controller
 sudo helm pull eks/aws-load-balancer-controller -d /etc/kubernetes/zadara/
 sudo helm template eks/aws-load-balancer-controller --set clusterName=k8s | grep image: | sed 's/image://' | sudo xargs ctr --namespace k8s.io images pull
+cat <<EOF | sudo tee /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
+clusterName: CLUSTER_NAME
+vpcId: VPC_ID
+awsApiEndpoints: "ec2=API_ENDPOINT/api/v2/aws/ec2,elasticloadbalancing=API_ENDPOINT/api/v2/aws/elbv2,acm=API_ENDPOINT/api/v2/aws/acm,sts=API_ENDPOINT/api/v2/aws/sts"
+enableShield: false
+enableWaf: false
+enableWafv2: false
+region: eu-west-1
+EOF
 
 # Cluster Autoscaler
 sudo helm pull autoscaler/cluster-autoscaler -d /etc/kubernetes/zadara/
 sudo helm template autoscaler/cluster-autoscaler --set autoDiscovery.clusterName=k8s | grep image: | sed 's/image://' | sudo xargs ctr --namespace k8s.io images pull
+cat <<EOF | sudo tee /etc/kubernetes/zadara/values-cluster-autoscaler.yaml
+autoDiscovery.clusterName: CLUSTER_NAME
+cloudConfigPath: config/cloud.conf
+extraVolumes:
+  - name: cloud-config
+    configMap:
+      name: cloud-config
+extraVolumeMounts:
+  - name: cloud-config
+    mountPath: config
+EOF

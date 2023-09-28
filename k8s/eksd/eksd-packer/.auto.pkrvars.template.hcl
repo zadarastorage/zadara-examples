@@ -12,5 +12,5 @@ subnet_id            = "subnet-..."
 ssh_keypair_name     = "packer"
 private_keypair_path = "~/.ssh/bastion.pem"
 
-eksd_k8s_version     = "1-27"
-eksd_revision        = "9"
+eksd_k8s_version     = "1-28"
+eksd_revision        = "5"

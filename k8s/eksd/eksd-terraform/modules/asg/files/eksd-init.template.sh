@@ -101,13 +101,15 @@ local_cp_node_wait() {
     identify
 
     if [ $server_type = "leader" ]; then
-      # Extract the exact Kubernetes version to install (get it from the already-pulled image - I know I know, it's lame...)
+      # Extract the exact image versions to use (get it from the already-pulled image - it's lame but otherwise we would need a direct Packer integration...)
       kube_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/kubernetes/kube-apiserver:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
       etcd_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/etcd-io/etcd:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
       dns_ver=$(sudo ctr --namespace k8s.io images list name~=public.ecr.aws/eks-distro/coredns/coredns:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
+      ccm_ver=$(sudo ctr --namespace k8s.io images list name~=registry.k8s.io/provider-aws/cloud-controller-manager:v* | tail -n 1 | cut -d' ' -f1 | cut -d':' -f2)
       sudo sed -i s,KUBE_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
       sudo sed -i s,ETCD_VER,$etcd_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
       sudo sed -i s,DNS_VER,$dns_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
+      sudo sed -i s,CCM_VER,$dns_ver, /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
 
       # Leader is initializing cluster
       info "Installing Kubernetes version $kube_ver"
@@ -118,21 +120,59 @@ local_cp_node_wait() {
       # Await for cluster to be responding before completing the setup
       local_cp_api_wait
  
-      # Run post-init operations/deployments
-      sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/cloud-config.yaml
-      sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+      # Run post-init operations/deployments (CNI & CCM)
       export KUBECONFIG=/etc/kubernetes/admin.conf
-      kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
+      case $cni_provider in
+        calico)
+          info "Installing CNI: Calico (may require further configuration)"
+          kubectl create -f /etc/kubernetes/zadara/tigera-operator.yaml
+          sudo sed -i s,192.168.0.0/16,${pod_network},g /etc/kubernetes/zadara/custom-resources.yaml
+          kubectl create -f /etc/kubernetes/zadara/custom-resources.yaml
+        ;;
+        cilium)
+          info "Installing CNI: Cilium (experimental)"
+          sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
+          cilium install
+          cilium hubble enable
+        ;;
+        *)
+          info "Installing CNI: Flannel (default)"
+          sudo sed -i s,10.244.0.0/16,${pod_network},g /etc/kubernetes/zadara/kube-flannel.yml
+          kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
+        ;;
+      esac
+      info "Installing CCM: AWS Cloud Provider for Kubernetes"
+      sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/cloud-config.yaml
       kubectl apply -f /etc/kubernetes/zadara/cloud-config.yaml -n kube-system
       helm install --namespace kube-system aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
 
-      # Await for cluster nodes to be ready before continuing with additional deployments & declare cluster is up & running
+      # Await for cluster nodes to be ready before continuing with additional addons deployments & declare cluster is up & running
       local_cp_node_wait
       sudo chmod 644 /etc/kubernetes/admin.conf
-      kubectl apply $(ls /etc/kubernetes/zadara/*snapshot.storage.k8s.io_*.yaml | awk ' { print " -f " $1 } ')
-      kubectl apply -n kube-system -f /etc/kubernetes/zadara/rbac-snapshot-controller.yaml
-      kubectl apply -n kube-system -f /etc/kubernetes/zadara/setup-snapshot-controller.yaml
-      helm install --namespace kube-system aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+      if [ $install_ebs_csi ]; then
+        info "Installing Addon: EBS CSI driver"
+        sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+        sudo sed -i s,gp2,${ebs_csi_volume_type}, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+        kubectl apply $(ls /etc/kubernetes/zadara/*snapshot.storage.k8s.io_*.yaml | awk ' { print " -f " $1 } ')
+        kubectl apply -n kube-system -f /etc/kubernetes/zadara/rbac-snapshot-controller.yaml
+        kubectl apply -n kube-system -f /etc/kubernetes/zadara/setup-snapshot-controller.yaml
+        helm install --namespace kube-system aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
+      fi
+      if [ $install_lb_controller ]; then
+        info "Installing Addon: AWS Load Balancer Controller"
+        sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
+        sudo sed -i s,VPC_ID,${vpc_id}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
+        helm install --namespace kube-system aws-load-balancer-controller $(ls /etc/kubernetes/zadara/aws-load-balancer-controller-*.tgz) -f /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
+      fi
+      if [ $install_autoscaler ]; then
+        info "Installing Addon: Cluster Autoscaler"
+        sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-cluster_autoscaler.yaml
+        helm install --namespace kube-system cluster-autoscaler $(ls /etc/kubernetes/zadara/cluster-autoscaler-*.tgz) -f /etc/kubernetes/zadara/values-cluster_autoscaler.yaml
+      fi
+      if [ $install_kasten_k10 ]; then
+        info "Installing Addon: Kasten K10"
+        helm install --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz) 
+      fi
     fi
 
     if [ $server_type = "server" ]; then 

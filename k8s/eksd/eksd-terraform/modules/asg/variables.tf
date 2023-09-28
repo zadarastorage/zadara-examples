@@ -3,6 +3,16 @@ variable "group_name" {
   description = ""
 }
 
+variable "ebs_csi_volume_type" {
+  type        = string
+  default     = "gp2"
+  description = "VolumeType alias (defaulting to gp2 in order to align with zCompute default VolumeType)"
+  validation {
+    condition     = contains(["io1", "io2", "gp2", "gp3", "sc1", "st1", "standard", "sbp1", "sbg1"], var.ebs_csi_volume_type)
+    error_message = "Valid values for var: ebs_csi_volume_type are (io1, io2, gp2, gp3, sc1, st1, standard, sbp1, sbg1)."
+  }
+}
+
 variable "volume_type" {
   type        = string
   default     = null
@@ -15,7 +25,7 @@ variable "volume_size" {
 }
 
 variable "cluster_name" {
-  type = string
+  type        = string
 }
 
 variable "eksd_masters_lb_url" {
@@ -36,18 +46,53 @@ variable "eksd_certificate" {
 }
 
 variable "is_worker" {
-  type = bool
+  type        = bool
+}
+
+variable "cni_provider" {
+  type        = string
+  default     = "flannel"
+  description = "CNI provider - choose from flannel, calico or cilium (experimental)"
+  validation {
+    condition     = contains(["flannel", "calico", "cilium"], var.cni_provider)
+    error_message = "Valid values for var: cni_provider are (flannel, calico, cilium)."
+  }
 }
 
 variable "pod_network" {
-  type = string
+  type    = string
   default = "10.244.0.0/16"
+}
+
+variable "install_ebs_csi" {
+  type    = bool
+  default = true
+}
+
+variable "install_lb_controller" {
+  type    = bool
+  default = true
+}
+
+variable "install_autoscaler" {
+  type    = bool
+  default = true
+}
+
+variable "install_kasten_k10" {
+  type    = bool
+  default = true
 }
 
 variable "eksd_san" {
   default     = []
   type        = list(string)
   description = ""
+}
+
+variable "vpc_id" {
+  type    = string
+  default = null
 }
 
 variable "security_groups" {

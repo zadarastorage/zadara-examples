@@ -21,8 +21,8 @@ Inside the `eksd-packer` folder you will find an [HashiCorp Packer](https://www.
    * `private_keypair_path` - local path to the SSH private key (will be used by packer script to login in to the bastion and builder instances)
 
 * You may also specify the relevant EKS-D version & revision of your choice (otherwise the default ones will be used) as stated in the [EKS-D releases](https://github.com/aws/eks-distro/blob/main/README.md#releases):
-    * `eksd_k8s_version` - for example, "1-27"
-    * `eksd_revision` - for example, "9"
+    * `eksd_k8s_version` - for example, "1-28"
+    * `eksd_revision` - for example, "5"
 
 * Run the packer command using: 
   ```shell

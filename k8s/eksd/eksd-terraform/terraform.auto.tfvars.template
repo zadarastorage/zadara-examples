@@ -14,10 +14,10 @@ masters_load_balancer_internal_dns = ""
 masters_load_balancer_public_ip    = ""
 masters_load_balancer_private_ip   = ""
 
-eksd_ami                        = "ami-..."
+eksd_ami                           = "ami-..."
 
-masters_keyname                   = ""
-workers_keyname                   = ""
+masters_keyname                    = ""
+workers_keyname                    = ""
 
 masters_instance_type              = "z4.large"
 workers_instance_type              = "z4.large"
@@ -27,3 +27,9 @@ workers_count                      = 1
 
 masters_volume_size                = "100"
 workers_volume_size                = "250"
+
+ebs_csi_volume_type                = "gp2"
+install_ebs_csi                    = true
+install_lb_controller              = true
+install_autoscaler                 = true
+install_kasten_k10                 = true
