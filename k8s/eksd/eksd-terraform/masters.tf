@@ -102,7 +102,6 @@ module "masters_asg" {
   volume_size              = var.masters_volume_size
   pod_network              = var.pod_network
   eksd_san                 = local.eksd_san
-  controller_image_version = var.controller_image_version
 
   max_size     = var.masters_count
   min_size     = var.masters_count

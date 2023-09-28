@@ -50,11 +50,6 @@ variable "eksd_san" {
   description = ""
 }
 
-variable "controller_image_version" {
-  type = string
-  default = "v1.27.1"
-}
-
 variable "security_groups" {
   type        = list(string)
   description = ""

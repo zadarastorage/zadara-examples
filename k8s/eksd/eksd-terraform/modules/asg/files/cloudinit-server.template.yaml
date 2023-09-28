@@ -13,7 +13,7 @@ write_files:
         - --cluster-name=${ cluster_name }
         - --configure-cloud-routes=false
       image:
-          tag: ${ controller_image_version }
+          tag: "CCM_VER"
       cloudConfigPath: config/cloud.conf
       extraVolumes:
         - name: cloud-config

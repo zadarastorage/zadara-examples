@@ -13,7 +13,6 @@ data "cloudinit_config" "this" {
       pod_network   = var.pod_network
       certificate   = var.eksd_certificate
       san           = var.eksd_san
-      controller_image_version = var.controller_image_version
     })
   }
 

@@ -137,9 +137,3 @@ variable "pod_network" {
   description = "CIDR for internal Kubernetes pods network"
   default     = "10.244.0.0/16"
 }
-
-variable "controller_image_version" {
-  type        = string
-  description = "Image tag (version) for the AWS Cloud Provider, see here: https://github.com/kubernetes/cloud-provider-aws/tree/master#compatibility-with-kubernetes"
-  default     = "v1.27.1"
-}
