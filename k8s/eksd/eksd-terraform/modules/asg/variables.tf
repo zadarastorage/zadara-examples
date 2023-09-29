@@ -92,7 +92,7 @@ variable "eksd_san" {
 
 variable "vpc_id" {
   type    = string
-  default = null
+  default = ""
 }
 
 variable "security_groups" {

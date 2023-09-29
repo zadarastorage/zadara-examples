@@ -109,7 +109,7 @@ local_cp_node_wait() {
       sudo sed -i s,KUBE_VER,$kube_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
       sudo sed -i s,ETCD_VER,$etcd_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
       sudo sed -i s,DNS_VER,$dns_ver, /etc/kubernetes/zadara/kubeadm-config.yaml
-      sudo sed -i s,CCM_VER,$dns_ver, /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
+      sudo sed -i s,CCM_VER,$ccm_ver, /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
 
       # Leader is initializing cluster
       info "Installing Kubernetes version $kube_ver"
@@ -122,7 +122,7 @@ local_cp_node_wait() {
  
       # Run post-init operations/deployments (CNI & CCM)
       export KUBECONFIG=/etc/kubernetes/admin.conf
-      case $cni_provider in
+      case ${cni_provider} in
         calico)
           info "Installing CNI: Calico (may require further configuration)"
           kubectl create -f /etc/kubernetes/zadara/tigera-operator.yaml
@@ -149,7 +149,7 @@ local_cp_node_wait() {
       # Await for cluster nodes to be ready before continuing with additional addons deployments & declare cluster is up & running
       local_cp_node_wait
       sudo chmod 644 /etc/kubernetes/admin.conf
-      if [ $install_ebs_csi ]; then
+      if [ ${install_ebs_csi} ]; then
         info "Installing Addon: EBS CSI driver"
         sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
         sudo sed -i s,gp2,${ebs_csi_volume_type}, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
@@ -158,18 +158,18 @@ local_cp_node_wait() {
         kubectl apply -n kube-system -f /etc/kubernetes/zadara/setup-snapshot-controller.yaml
         helm install --namespace kube-system aws-ebs-csi-driver $(ls /etc/kubernetes/zadara/aws-ebs-csi-driver-*.tgz) -f /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
       fi
-      if [ $install_lb_controller ]; then
+      if [ ${install_lb_controller} ]; then
         info "Installing Addon: AWS Load Balancer Controller"
         sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
         sudo sed -i s,VPC_ID,${vpc_id}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
         helm install --namespace kube-system aws-load-balancer-controller $(ls /etc/kubernetes/zadara/aws-load-balancer-controller-*.tgz) -f /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
       fi
-      if [ $install_autoscaler ]; then
+      if [ ${install_autoscaler} ]; then
         info "Installing Addon: Cluster Autoscaler"
         sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-cluster_autoscaler.yaml
         helm install --namespace kube-system cluster-autoscaler $(ls /etc/kubernetes/zadara/cluster-autoscaler-*.tgz) -f /etc/kubernetes/zadara/values-cluster_autoscaler.yaml
       fi
-      if [ $install_kasten_k10 ]; then
+      if [ ${install_kasten_k10} ]; then
         info "Installing Addon: Kasten K10"
         helm install --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz) 
       fi
