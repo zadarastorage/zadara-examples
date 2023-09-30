@@ -16,13 +16,13 @@ secret_key=$2
 # Step 1 - EKS-D deployment
 cd ./eksd-terraform
 terraform destroy --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
-rm -f terraform.tfstate terraform.tfstate.backup
+rm -f terraform.tfstate*
 cd ..
 
 # Step 2 - infrastructure automation
 cd ./infra-terraform
 terraform destroy -compact-warnings --auto-approve -var-file ../terraform.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
-rm -f terraform.tfstate terraform.tfstate.backup
+rm -f terraform.tfstate*
 cd ..
 
 # Step 3 - other leftovers

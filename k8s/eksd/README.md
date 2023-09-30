@@ -21,6 +21,8 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * AWS programmatic credentials (access key & secret key) with tenant-admin, AWS MemberFullAccess & IAMFullAccess permissions for the relevant project
 
 ## All-In-One deployment
+Use this option to streamline a cluster deployment with a single command - you will get the OOTB default values of a small-sized cluster with expantion abilities for both the control-plane (via manual master ASG scaling) and the data-plane (via dynamic workers ASG scaling by Cluster Autoscaler). Alternatively, you may also change the default values and use this approach for any other cluster configuration as mentioned below. 
+
 * Copy the `terraform.tfvars.template` file to `terraform.tfvars` and edit the parameters:
     * `api_endpoint` - the URL/IP of the zCompute cluster
     * `environment` - prefix for the various resources to be created (defaults to "k8s")
@@ -38,7 +40,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * Any such variable can be added to this file in order to override a default value and facilitate a non-default All-In-One deployment
     * For example, you can set the `ebs_csi_volume_type` to something other than gp2 per your storage preferences - either in the eksd-terraform project values or here as an override
 * Run the `apply-all.sh` script with the additional two parameters of your access_key & secret_key
-    * The script will take at least 5-10 minutes for a successful minimal deployment
+    * The script will take at least 10 minutes for a successful minimal deployment of a single master & worker
     * The script cannot be re-run, but once completed the internal Terraform projects are initialized and can be used as usual
     * If neccessary, you can destroy all assets and reset everything with the `destroy-all.sh` script (with the same two credentials parameters)
 * Once completed you will see the kubeconfig content ready for your usage - you can skip the next two steps :) 
@@ -97,8 +99,8 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
         * `workers_count` - the amount of worder nodes (minimal is 0, can be later managed by cluster-autoscaler)
         * `masters_instance_type` - the masters VM size (minimal is z2.large, suggested z4.xlarge)
         * `masters_instance_type` - the workers VM size (minimal is z2.large, suggested z8.xlarge)
-        * `masters_volume_size` - the masters disk size (minimal is 25GB, suggested 100GB)
-        * `workers_volume_size` - the workers disk size (minimal is 25GB, suggested 250GB)
+        * `masters_volume_size` - the masters disk size (minimal is 25GB, suggested 50GB)
+        * `workers_volume_size` - the workers disk size (minimal is 25GB, suggested 100GB)
         * `ebs_csi_volume_type` - the cloud's storage VolumeType (defaulting to gp2)
         * `install_ebs_csi` - whether to deploy the EBS CSI driver addon
         * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon

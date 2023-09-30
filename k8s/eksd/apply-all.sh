@@ -45,7 +45,7 @@ bastion_keyfile=$(echo var.bastion_keyfile | terraform console | cut -d\" -f2)
 # Step 2 - EKS-D deployment
 cd ./eksd-terraform
 terraform init --reconfigure
-terraform apply --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
+terraform apply -compact-warnings --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
 master_hostname=$(terraform output -raw master_hostname)
 
 # Step 2.5 - Get kubeconfig

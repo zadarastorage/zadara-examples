@@ -22,11 +22,11 @@ workers_keyname                    = ""
 masters_instance_type              = "z4.large"
 workers_instance_type              = "z4.large"
 
-masters_count                      = 1 # recommended (1, 3, 5)
+masters_count                      = 1 # recommended 3
 workers_count                      = 1
 
-masters_volume_size                = "100"
-workers_volume_size                = "250"
+masters_volume_size                = "50"
+workers_volume_size                = "100"
 
 ebs_csi_volume_type                = "gp2"
 install_ebs_csi                    = true

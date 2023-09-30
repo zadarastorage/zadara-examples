@@ -162,16 +162,17 @@ local_cp_node_wait() {
         info "Installing Addon: AWS Load Balancer Controller"
         sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
         sudo sed -i s,VPC_ID,${vpc_id}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
+        sudo sed -i s,API_ENDPOINT,$api_endpoint, values-aws-load-balancer-controller.yaml
         helm install --namespace kube-system aws-load-balancer-controller $(ls /etc/kubernetes/zadara/aws-load-balancer-controller-*.tgz) -f /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
       fi
       if [ ${install_autoscaler} ]; then
         info "Installing Addon: Cluster Autoscaler"
         sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-cluster_autoscaler.yaml
-        helm install --namespace kube-system cluster-autoscaler $(ls /etc/kubernetes/zadara/cluster-autoscaler-*.tgz) -f /etc/kubernetes/zadara/values-cluster_autoscaler.yaml
+        helm install --namespace kube-system cluster-autoscaler $(ls /etc/kubernetes/zadara/cluster-autoscaler-*.tgz) -f /etc/kubernetes/zadara/values-cluster-autoscaler.yaml
       fi
       if [ ${install_kasten_k10} ]; then
         info "Installing Addon: Kasten K10"
-        helm install --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz) 
+        helm install --create-namespace --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz) 
       fi
     fi
 
