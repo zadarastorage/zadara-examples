@@ -35,7 +35,7 @@ do
 done
 
 # Fetch the kubeconfig from the bastion
-scp -i $bastion_keypair $bastion_user@$bastion_ip:~/kubeconfig ./kubeconfig.temp
+scp -i $bastion_keypair -o StrictHostKeyChecking=no $bastion_user@$bastion_ip:~/kubeconfig ./kubeconfig.temp
 if [[ $? -ne 0 ]];
 then
     echo "Error: Cloudn't obtain the kubeconfig - check the bastion, ssh into the master node, run journalctl and look for kubeadm init errors)"
