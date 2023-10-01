@@ -10,9 +10,9 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 * Storage:
     * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command via its container (`docker run -it -e SYMP_URL=<zCompute URL> docker.io/stratoscale/symp-cli:latest`) using your zCompute account (domain) and credentials: \
     `volume volume-types list -c name -c alias -c is_provisioning_disabled -c operational_state -c state -c health -m grep=ProvisioningEnabled` \
-    The EBS CSI will use gp2 as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable
+    The EBS CSI will use 'gp2' as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable
 * Images:
-    * Ubuntu 22.04 (or CentOS 7) image should be imported from the Marketplace to be used for the Bastion VM
+    * Ubuntu 22.04 image should be imported from the Marketplace to be used for the Bastion VM
     * Zadara's pre-baked EKS-D image should be imported from the Marketplace to be used for the Kubernetes nodes
 * Credentials:
     * Key-pair for the bastion server (either import or create a new one)
@@ -94,12 +94,12 @@ Use this option to streamline a cluster deployment with a single command - you w
         * `master_key_name` - the Key-Pair name for the master VMs (you may reuse the bastion key)
         * `worker_key_name` - the Key-Pair name for the worker VMs (you may reuse the bastion key)
     * Populate extra optional variables
-        * `masters_count` - the amount of master nodes (minimal is 1, suggested 3 for HA)
-        * `workers_count` - the amount of worder nodes (minimal is 0, can be later managed by cluster-autoscaler)
-        * `masters_instance_type` - the masters VM size (minimal is z2.large, suggested z4.xlarge)
-        * `masters_instance_type` - the workers VM size (minimal is z2.large, suggested z8.xlarge)
-        * `masters_volume_size` - the masters disk size (minimal is 25GB, suggested 50GB)
-        * `workers_volume_size` - the workers disk size (minimal is 25GB, suggested 100GB)
+        * `masters_count` - the amount of master nodes (minimal is 1, defaulting to 1 but suggested 3 for HA)
+        * `workers_count` - the amount of worder nodes (minimal is 0, defaulting to 1 with max ASG size of 5)
+        * `masters_instance_type` - the masters VM size (minimal is z2.large, defaulting to z4.large)
+        * `masters_instance_type` - the workers VM size (minimal is z2.large, defaulting to z8.large)
+        * `masters_volume_size` - the masters disk size (minimal is 25GB, defaulting to 50GB)
+        * `workers_volume_size` - the workers disk size (minimal is 25GB, defaulting to 100GB)
         * `ebs_csi_volume_type` - the cloud's storage VolumeType (defaulting to gp2)
         * `install_ebs_csi` - whether to deploy the EBS CSI driver addon (defaulting to true)
         * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon (defaulting to true)

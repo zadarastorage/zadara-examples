@@ -20,7 +20,7 @@ masters_keyname                    = ""
 workers_keyname                    = ""
 
 masters_instance_type              = "z4.large"
-workers_instance_type              = "z4.large"
+workers_instance_type              = "z8.large"
 
 masters_count                      = 1 # recommended 3
 workers_count                      = 1
@@ -31,5 +31,5 @@ workers_volume_size                = "100"
 ebs_csi_volume_type                = "gp2"
 install_ebs_csi                    = true
 install_lb_controller              = true
-install_autoscaler                 = true
-install_kasten_k10                 = true
+install_autoscaler                 = false
+install_kasten_k10                 = false

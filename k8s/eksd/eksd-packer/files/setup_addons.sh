@@ -81,10 +81,6 @@ volumeSnapshotClasses:
     deletionPolicy: Delete
 EOF
 
-# Kasten
-sudo helm pull kasten/k10 -d /etc/kubernetes/zadara/
-sudo helm template kasten/k10 | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
-
 # AWS Load Balancer Controller
 sudo helm pull eks/aws-load-balancer-controller -d /etc/kubernetes/zadara/
 sudo helm template eks/aws-load-balancer-controller --set clusterName=k8s | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
@@ -114,3 +110,7 @@ extraVolumeMounts:
   - name: cloud-config
     mountPath: config
 EOF
+
+# Kasten
+sudo helm pull kasten/k10 -d /etc/kubernetes/zadara/
+sudo helm template kasten/k10 | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
