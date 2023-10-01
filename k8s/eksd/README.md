@@ -21,7 +21,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * AWS programmatic credentials (access key & secret key) with tenant-admin, AWS MemberFullAccess & IAMFullAccess permissions for the relevant project
 
 ## All-In-One deployment
-Use this option to streamline a cluster deployment with a single command - you will get the OOTB default values of a small-sized cluster with expantion abilities for both the control-plane (via manual master ASG scaling) and the data-plane (via dynamic workers ASG scaling by Cluster Autoscaler). Alternatively, you may also change the default values and use this approach for any other cluster configuration as mentioned below. 
+Use this option to streamline a cluster deployment with a single command - you will get the OOTB default values of a small-sized cluster with the EBS & LB addons. Alternatively, you may also change the default values and use this approach for any other cluster configuration as mentioned below. 
 
 * Copy the `terraform.tfvars.template` file to `terraform.tfvars` and edit the parameters:
     * `api_endpoint` - the URL/IP of the zCompute cluster
@@ -35,10 +35,9 @@ Use this option to streamline a cluster deployment with a single command - you w
     * `masters_keyfile` - the masters Key-Pair private PEM file location
     * `workers_keyname` - the workers Key-Pair name
     * `workers_keyfile` - the workers Key-Pair private PEM file location
-* Optionally add more variables to create a non-default deployment
-    * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values
-    * Any such variable can be added to this file in order to override a default value and facilitate a non-default All-In-One deployment
-    * For example, you can set the `ebs_csi_volume_type` to something other than gp2 per your storage preferences - either in the eksd-terraform project values or here as an override
+* Optional - create a non-default deployment
+    * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values in the respected `variables.tf` files
+    * For example, you can set the `ebs_csi_volume_type` in the eksd-terraform project to something other than 'gp2' per your storage preferences
 * Run the `apply-all.sh` script with the additional two parameters of your access_key & secret_key
     * The script will take at least 10 minutes for a successful minimal deployment of a single master & worker
     * The script cannot be re-run, but once completed the internal Terraform projects are initialized and can be used as usual
@@ -72,7 +71,7 @@ Use this option to streamline a cluster deployment with a single command - you w
 
 
 ## Step 2: Automated EKS-D deployment (Terraform)
-* Go to the `rke2-terraform` directory
+* Go to the `eksd-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
     * Populate the sensitive variables (you may want to pass them at runtime rather than save them)
         * `cluster_access_key` - admin access key
@@ -102,10 +101,10 @@ Use this option to streamline a cluster deployment with a single command - you w
         * `masters_volume_size` - the masters disk size (minimal is 25GB, suggested 50GB)
         * `workers_volume_size` - the workers disk size (minimal is 25GB, suggested 100GB)
         * `ebs_csi_volume_type` - the cloud's storage VolumeType (defaulting to gp2)
-        * `install_ebs_csi` - whether to deploy the EBS CSI driver addon
-        * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon
-        * `install_autoscaler` - whether to deploy the Cluster Autoscaler addon
-        * `install_kasten_k10` - whether to deploy the Kasten K10 addon
+        * `install_ebs_csi` - whether to deploy the EBS CSI driver addon (defaulting to true)
+        * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon (defaulting to true)
+        * `install_autoscaler` - whether to deploy the Cluster Autoscaler addon (defaulting to false)
+        * `install_kasten_k10` - whether to deploy the Kasten K10 addon (defaulting to false)
 * `terraform init` - this will initialize Terraform for the environment
 * `terraform plan` - this will output the changes that Terraform will actually do (resource creation), for example:
     * EKS-D master nodes ASG + Launch Configuration
@@ -135,30 +134,68 @@ Your cluster comes pre-deployed with the below utilities:
     * [Cilium](https://cilium.io/) - eBPF-based networking with built-in observability (experimental)
 
 ## Addons
-As an opt-out approach, unless defined otherwise your cluster comes pre-deployed with the latest versions of the below addons (you can also change/delete them via helm after the deployment):
+As mentioned in step 2, your cluster can come pre-deployed with the latest versions (at the time of EKS-D image baking) of the below addons. Alternatively, you may change/delete them via helm after the deployment, or choose to install them by yourself:
 
 * CSI - using the EBS driver, providing block persistance abilities:
     * The `ebs-cs` StorageClass is pre-configured with the VolumeType and set as the default StorageClass (you may [override](https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/) it with other CSIs)
     * The snapshotting abilities are pre-configured with the `ebs-vsc` VolumeSnapshotClass (including the Kasten-ready [annotation](https://docs.kasten.io/latest/install/storage.html#csi-snapshot-configuration) for seamless operability)
+    * For self-installation, use the below values with the helm chart: 
+        ```yaml
+        controller:
+          env:
+            - name: AWS_EC2_ENDPOINT
+              value: '<API_ENDPOINT>/api/v2/aws/ec2'
+            - name: AWS_REGION
+              value: 'us-east-1'
+        storageClasses:
+          - name: ebs-sc
+            annotations:
+              storageclass.kubernetes.io/is-default-class: "true"
+            parameters:
+              type: "<EBS ALIAS>"
+        volumeSnapshotClasses: 
+          - name: ebs-vsc
+            annotations:
+              snapshot.storage.kubernetes.io/is-default-class: "true"
+              k10.kasten.io/is-snapshot-class: "true"
+            deletionPolicy: Delete
+        ```
 * AWS Load Balancer Controller
     * For NLB - use the LoadBalancer service per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
-      * Make sure to add the following annotations to the service - the first two are mandatory in order for the controller to function, and the third is only required for internet-facing NLB (as the default is internal):
-        ```yaml
-        service:
-          annotations:
-            service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-            service.beta.kubernetes.io/aws-load-balancer-type: external
-            service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-        ```
+      * The latest controller version utilize the built-in LoadBalancer resource, so you just need to add the `service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing` annotation for internet-facing NLB (as the default is internal)
       * As a [known limitation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/service/nlb/#security-group), the controller wouldn't create the relevant security group to the NLB - rather, it will add the relevant rules to the worker node's security group and you can attach this (or another) security group to the NLB via the zCompute GUI, AWS CLI or Symp
     * For ALB - use the Ingress resource per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/ingress/annotations)
       * Set the `ingressClassName` attribute per the controller class name (default is `alb`) 
       * By default all Ingress resources are [internal-facing](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/ingress/annotations/#scheme) - if you want your ALB to get a public IP you will have to set the `alb.ingress.kubernetes.io/scheme` annotation to `internet-facing` (default value is `internal`)
+    * For self-installation, use the below values with the helm chart: 
+      ```yaml
+      clusterName: <CLUSTER_NAME>
+      vpcId: <VPC_ID>
+      awsApiEndpoints: "ec2=<API_ENDPOINT>/api/v2/aws/ec2,elasticloadbalancing=<API_ENDPOINT>/api/v2/aws/elbv2,acm=<API_ENDPOINT>/api/v2/aws/acm,sts=<API_ENDPOINT>/api/v2/aws/sts"
+      enableShield: false
+      enableWaf: false
+      enableWafv2: false
+      region: us-east-1
+      ```
 * Cluster Autoscaler
     * The configuration is pre-populated to use the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) based on the pre-populated tags on the worker ASG (`k8s.io/cluster-autoscaler/enabled` and `k8s.io/cluster-autoscaler/<cluster-name>`) where cluster-name is the environment variable set on the eksd-terraform project
     * If you opt to use the [manual mode](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#manual-configuration)  - remember to define the specific workers ASG/s name/s and their lower/upper bounds on the [autoscalingGroups](https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml#L39) values
+    * For self-installation, use the below values with the helm chart: 
+        ```yaml
+        awsRegion: us-east-1
+        autoDiscovery:
+          clusterName: <CLUSTER_NAME>
+        cloudConfigPath: config/cloud.conf
+        extraVolumes:
+          - name: cloud-config
+            configMap:
+              name: cloud-config
+        extraVolumeMounts:
+          - name: cloud-config
+            mountPath: config
+        ```
 * Kasten K10
-    * The deployment assumes the EBS CSI addon is also installed (otherwise k10 will fail to load)
+    * The deployment assumes the EBS CSI addon is already installed (otherwise k10 will fail to load)
     * The snapshotting ability is enabled OOTB (using the default `ebs-vsc` VolumeSnapshotClass)
     * The export profile is not set OOTB - you will need to configure it in case you want to export the backups outside of zCompute
     * Keep in mind that k10 is only free up to 5 worker nodes - please consult Kasten's [pricing](https://www.kasten.io/pricing) for anything above that

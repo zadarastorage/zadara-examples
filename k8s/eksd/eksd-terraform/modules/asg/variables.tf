@@ -76,12 +76,12 @@ variable "install_lb_controller" {
 
 variable "install_autoscaler" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "install_kasten_k10" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "eksd_san" {
