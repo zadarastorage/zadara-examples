@@ -54,12 +54,12 @@ variable "ssh_keypair_name" {
 
 variable "eksd_k8s_version" {
   type        = string
-  default     = "1-27"
+  default     = "1-28"
   description = "EKS-D k8s version"
 }
 
 variable "eksd_revision" {
   type        = string
-  default     = "12"
+  default     = "6"
   description = "EKS-D release revision"
 }

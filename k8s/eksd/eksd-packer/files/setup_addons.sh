@@ -92,6 +92,8 @@ enableShield: false
 enableWaf: false
 enableWafv2: false
 region: us-east-1
+ingressClassConfig:
+  default: true
 EOF
 
 # Cluster Autoscaler

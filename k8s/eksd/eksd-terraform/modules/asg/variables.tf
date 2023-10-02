@@ -76,7 +76,7 @@ variable "install_lb_controller" {
 
 variable "install_autoscaler" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "install_kasten_k10" {

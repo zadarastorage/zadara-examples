@@ -161,23 +161,23 @@ variable "ebs_csi_volume_type" {
 variable "install_ebs_csi" {
   type        = bool
   default     = true
-  description = "Addon: EBS CSI driver (installed by default)"
+  description = "Addon: EBS CSI driver"
 }
 
 variable "install_lb_controller" {
   type        = bool
   default     = true
-  description = "Addon: AWS Load Balancer Controller (installed by default)"
+  description = "Addon: AWS Load Balancer Controller"
 }
 
 variable "install_autoscaler" {
   type        = bool
-  default     = false
-  description = "Addon: Cluster Autoscaler (installed by default)"
+  default     = true
+  description = "Addon: Cluster Autoscaler"
 }
 
 variable "install_kasten_k10" {
   type        = bool
   default     = false
-  description = "Addon: Kasten K10 (installed by default)"
+  description = "Addon: Kasten K10"
 }
