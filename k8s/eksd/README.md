@@ -1,5 +1,5 @@
 # EKS-D automated deployment
-Below is an example (not OOTB production-grade solution) for an EKS-D automated deployment over zCompute - facilitating cloud integration with ASG scaling, instance labeling & lifecycle, native load balancing and built-in storage abilities with the AWS EBS CSI driver. 
+Below is an example (not OOTB production-grade solution) for an EKS-D automated deployment over zCompute - facilitating cloud integration with dynamic ASG scaling, instance labeling & lifecycle, native load balancing, built-in storage capabilities and optional Kasten K10 as a backup & restore solution. 
 
 ## Known limitations
 * zCompute minimal version is **23.08** (previous versions will not support the EKS-D initialization phase which is implemented in Step #2) in VSC-mode
@@ -9,8 +9,8 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 ## Prerequisites: zCompute
 * Storage:
     * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command via its container (`docker run -it -e SYMP_URL=<zCompute URL> docker.io/stratoscale/symp-cli:latest`) using your zCompute account (domain) and credentials: \
-    `volume volume-types list -c name -c alias -c is_provisioning_disabled -c operational_state -c state -c health -m grep=ProvisioningEnabled` \
-    The EBS CSI will use 'gp2' as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable
+    `volume volume-types list -c name -c alias -c operational_state -c state -c health -m grep=ProvisioningEnabled` \
+    The EBS CSI will use 'gp2' as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable in the eksd-terraform project
 * Images:
     * Ubuntu 22.04 image should be imported from the Marketplace to be used for the Bastion VM
     * Zadara's pre-baked EKS-D image should be imported from the Marketplace to be used for the Kubernetes nodes
@@ -69,7 +69,6 @@ Use this option to streamline a cluster deployment with a single command - you w
 * In the next step you will also be required to provide the NLB's private & public IPs - you can get those from the GUI or by running the `get_loadbalancer.sh` script as proposed in the terraform output message
 * Note that the subnets' MTU must match the edge network MTU - if there's a mismatch you should adjust both private & public subnets MTUs accordingly via zCompute GUI before continuing
 
-
 ## Step 2: Automated EKS-D deployment (Terraform)
 * Go to the `eksd-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
@@ -95,7 +94,7 @@ Use this option to streamline a cluster deployment with a single command - you w
         * `worker_key_name` - the Key-Pair name for the worker VMs (you may reuse the bastion key)
     * Populate extra optional variables
         * `masters_count` - the amount of master nodes (minimal is 1, defaulting to 1 but suggested 3 for HA)
-        * `workers_count` - the amount of worder nodes (minimal is 0, defaulting to 1 with max ASG size of 5)
+        * `workers_count` - the amount of worder nodes (minimal is 0, defaulting to 1 + 3 more for max ASG size of 4)
         * `masters_instance_type` - the masters VM size (minimal is z2.large, defaulting to z4.large)
         * `masters_instance_type` - the workers VM size (minimal is z2.large, defaulting to z8.large)
         * `masters_volume_size` - the masters disk size (minimal is 25GB, defaulting to 50GB)

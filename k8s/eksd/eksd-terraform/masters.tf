@@ -110,7 +110,7 @@ module "masters_asg" {
   install_autoscaler    = var.install_autoscaler
   install_kasten_k10    = var.install_kasten_k10
 
-  max_size     = var.masters_count
+  max_size     = var.masters_count+var.masters_addition
   min_size     = var.masters_count
   desired_size = var.masters_count
 

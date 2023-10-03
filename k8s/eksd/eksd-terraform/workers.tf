@@ -26,7 +26,7 @@ module "workers_asg" {
   subnet_ids          = [var.private_subnet_id]
   volume_size         = var.workers_volume_size
 
-  max_size     = var.workers_count+5
+  max_size     = var.workers_count+var.workers_addition
   min_size     = var.workers_count
   desired_size = var.workers_count
 
