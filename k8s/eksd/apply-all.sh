@@ -2,20 +2,24 @@
 
 set -ex
 
-# Validate the number of arguments
-if [ $# -ne 2 ]; then
-    echo "Error: This script expects 2 arguments (and a pre-populated terraform.tfvars file)"
-    echo "Usage: $0 access_key secret_key"
-    exit 1
-fi
-
 # Populate variables
 access_key=$1
 secret_key=$2
 
+if [ $# -lt 2 ]; then
+    echo "Warn: Did not receive access & secret keys as arguments, trying with environments variables AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY"
+    access_key=$AWS_ACCESS_KEY_ID
+    secret_key=$AWS_SECRET_ACCESS_KEY
+    if [ ${#access_key} -lt 1 ] || [ ${#secret_key} -lt 1 ]; then
+        echo "Error: Did not find AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables - exiting with error as no credentials found"
+        exit 1
+    fi
+    echo "Info: Running without arguments - using AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables"
+fi
+
 # Step 0 - very basic check for leftovers...
 if test -f infra.tfvars; then
-    echo "previous infra.tfvars already exists - make sure to run destroy-all.sh before running apply-all.sh"
+    echo "Error: Previous infra.tfvars already exists - make sure to run destroy-all.sh before running apply-all.sh"
     exit 1
 fi
 
