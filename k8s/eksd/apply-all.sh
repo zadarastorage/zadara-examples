@@ -19,8 +19,8 @@ fi
 
 # Step 0 - very basic check for leftovers...
 if test -f infra.tfvars; then
-    echo "Error: Previous infra.tfvars already exists - make sure to run destroy-all.sh before running apply-all.sh"
-    exit 1
+    echo "Warn: Previous infra.tfvars file found - removing and re-applying all (otherwise please run destroy-all.sh before running apply-all.sh)"
+    rm infra.tfvars
 fi
 
 # Step 1 - infrastructure automation
