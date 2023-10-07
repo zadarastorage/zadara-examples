@@ -67,6 +67,11 @@ controller:
       value: 'API_ENDPOINT/api/v2/aws/ec2'
     - name: AWS_REGION
       value: 'us-east-1'
+sidecars:
+  provisioner:
+    additionalArgs:
+      - --timeout=30s
+      - --retry-interval-start=4s
 storageClasses:
   - name: ebs-sc
     annotations:
