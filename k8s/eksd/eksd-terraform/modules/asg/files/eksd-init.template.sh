@@ -168,6 +168,7 @@ local_cp_node_wait() {
         helm install --create-namespace --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz) 
       fi
       if ${install_lb_controller}; then
+        sleep 2  # allow existing helm-level installations to finish as loadbalancer resource change may affect them
         info "Installing Addon: AWS Load Balancer Controller"
         sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
         sudo sed -i s,VPC_ID,${vpc_id}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml

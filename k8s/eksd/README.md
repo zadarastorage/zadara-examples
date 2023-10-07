@@ -21,7 +21,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * AWS programmatic credentials (access key & secret key) with tenant-admin, AWS MemberFullAccess & IAMFullAccess permissions for the relevant project
 
 ## All-In-One deployment
-Use this option to streamline a cluster deployment with a single command - you will get the OOTB default values of a small-sized cluster with the EBS & LB addons. Alternatively, you may also change the default values and use this approach for any other cluster configuration as mentioned below. 
+For a simplified/demo experience, you can use this option to streamline a cluster deployment with a single command - you will get the OOTB default values of a small-sized cluster with a basic CNI (Flannel) and all addons except for Kasten K10. Note this option should not be used for production-grade deployments (for example the default control-plane is not HA), however you may change the default values as mentioned below to use this approach for any cluster configuration. 
 
 * Copy the `terraform.tfvars.template` file to `terraform.tfvars` and edit the parameters:
     * `api_endpoint` - the URL/IP of the zCompute cluster
@@ -38,11 +38,11 @@ Use this option to streamline a cluster deployment with a single command - you w
 * Optional - create a non-default deployment
     * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values in the respected `variables.tf` files
     * For example, you can set the `ebs_csi_volume_type` in the eksd-terraform project to something other than 'gp2' per your storage preferences
-* Run the `apply-all.sh` script with the additional two parameters of your access_key & secret_key
-    * The script will take at least 10 minutes for a successful minimal deployment of a single master & worker
-    * The script cannot be re-run, but once completed the internal Terraform projects are initialized and can be used as usual
-    * If neccessary, you can destroy all assets and reset everything with the `destroy-all.sh` script (with the same two credentials parameters)
-* Once completed you will see the kubeconfig content ready for your usage - you can skip the next two steps ;-) 
+* Run the `apply-all.sh` script with the additional two parameters of your access_key & secret_key (or use the AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables)
+    * The script will take about 10 minutes for a successful minimal deployment of a single master & worker
+    * The script can be rerun for re-apply Terraform changes (for example as part of an upgrade procedure)
+    * If neccessary, you can destroy all assets and reset everything with the `destroy-all.sh` script (with the same two credentials parameters/variables)
+* Once completed you will see the kubeconfig content ready for your usage (presented on screen and as a kubeconfig file in the running directory) so you can skip the next two steps and use it as-is ;-) 
 
 ## Step 1: Automated infrastructure deployment (Terraform)
 * Go to the `infra-terraform` directory
@@ -177,7 +177,7 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
       ingressClassConfig:
         default: true
       ```
-* Cluster Autoscaler 
+* Cluster Autoscaler (enabled by default)
     * The configuration is pre-populated to use the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) based on the pre-populated tags on the worker ASG (`k8s.io/cluster-autoscaler/enabled` and `k8s.io/cluster-autoscaler/<cluster-name>`) where cluster-name is the environment variable set on the eksd-terraform project
     * If you opt to use the [manual mode](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#manual-configuration)  - remember to define the specific workers ASG/s name/s and their lower/upper bounds on the [autoscalingGroups](https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml#L39) values
     * For self-installation, use the below values with the helm chart: 
@@ -194,7 +194,7 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
           - name: cloud-config
             mountPath: config
         ```
-* Kasten K10
+* Kasten K10 (disabled by default, and internal images are not pre-fetched)
     * The deployment assumes the EBS CSI addon is already installed (otherwise k10 will fail to load)
     * The snapshotting ability is enabled OOTB (using the default `ebs-vsc` VolumeSnapshotClass)
     * The export profile is not set OOTB - you will need to configure it in case you want to export the backups outside of zCompute

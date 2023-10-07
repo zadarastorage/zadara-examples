@@ -120,4 +120,4 @@ EOF
 
 # Kasten
 sudo helm pull kasten/k10 -d /etc/kubernetes/zadara/
-sudo helm template kasten/k10 | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
+#sudo helm template kasten/k10 | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
