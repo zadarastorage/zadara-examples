@@ -135,7 +135,7 @@ local_cp_node_wait() {
           info "Installing CNI: Cilium (experimental)"
           sudo tar xzvfC /etc/kubernetes/zadara/cilium-linux-amd64.tar.gz /usr/local/bin
           cilium install
-          cilium hubble enable
+          cilium hubble enable --ui
         ;;
         *)
           info "Installing CNI: Flannel (default)"
