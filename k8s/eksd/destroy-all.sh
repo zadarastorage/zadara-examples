@@ -17,6 +17,12 @@ if [ $# -lt 2 ]; then
     echo "Info: Running without arguments - using AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables"
 fi
 
+# Step 0 - very basic check for leftovers...
+if test ! -f infra.tfvars; then
+    echo "Error: Previous infra.tfvars file not found - nothing to remove"
+    exit 1
+fi
+
 # Step 1 - EKS-D deployment
 cd ./eksd-terraform
 terraform destroy --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
