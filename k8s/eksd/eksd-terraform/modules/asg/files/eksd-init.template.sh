@@ -129,10 +129,11 @@ local_cp_node_wait() {
           sudo sed -i s,VXLANCrossSubnet,IPIPCrossSubnet,g /etc/kubernetes/zadara/custom-resources.yaml
           sudo sed -i s,192.168.0.0/16,${pod_network},g /etc/kubernetes/zadara/custom-resources.yaml
           kubectl create -f /etc/kubernetes/zadara/custom-resources.yaml
+          sleep 10  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
         ;;
         cilium)
           info "Installing CNI: Cilium (experimental)"
-          sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
+          sudo tar xzvfC /etc/kubernetes/zadara/cilium-linux-amd64.tar.gz /usr/local/bin
           cilium install
           cilium hubble enable
         ;;
