@@ -126,6 +126,7 @@ local_cp_node_wait() {
         calico)
           info "Installing CNI: Calico (may require further configuration)"
           kubectl create -f /etc/kubernetes/zadara/tigera-operator.yaml
+          sudo sed -i s,VXLANCrossSubnet,IPIPCrossSubnet,g /etc/kubernetes/zadara/custom-resources.yaml
           sudo sed -i s,192.168.0.0/16,${pod_network},g /etc/kubernetes/zadara/custom-resources.yaml
           kubectl create -f /etc/kubernetes/zadara/custom-resources.yaml
         ;;
