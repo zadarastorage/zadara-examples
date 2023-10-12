@@ -571,7 +571,7 @@ EBS CSI
 
         cat <<EOF | tee ~/values-aws-ebs-csi-driver.yaml
         controller:
-        env:
+          env:
             - name: AWS_EC2_ENDPOINT
               value: 'https://{zCompute_hostname}/api/v2/aws/ec2'
         EOF
