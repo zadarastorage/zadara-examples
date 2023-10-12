@@ -164,8 +164,8 @@ variable "pod_network" {
 
 variable "ebs_csi_volume_type" {
   type        = string
-  default     = "gp3"
-  description = "VolumeType API alias (defaulting to gp2 in order to align with zCompute default VolumeType) for EBS CSI PVs"
+  default     = "gp2"
+  description = "VolumeType alias (defaulting to gp2 in order to align with zCompute default VolumeType)"
   validation {
     condition     = contains(["io1", "io2", "gp2", "gp3", "sc1", "st1", "standard", "sbp1", "sbg1"], var.ebs_csi_volume_type)
     error_message = "Valid values for var: ebs_csi_volume_type are (io1, io2, gp2, gp3, sc1, st1, standard, sbp1, sbg1)."

@@ -52,7 +52,7 @@ terraform init --reconfigure
 terraform apply -compact-warnings --auto-approve -compact-warnings -var-file ../terraform.tfvars -var-file ../infra.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
 master_hostname=$(terraform output -raw master_hostname)
 
-# Step 2.5 - Get (and output) kubeconfig
+# Step 2.5 - Get kubeconfig
 cd ..
 masters_load_balancer_private_ip=$(echo var.masters_load_balancer_private_ip | terraform console -var-file infra.tfvars | tail -n 1 | cut -d\" -f2)
 masters_load_balancer_public_ip=$(echo var.masters_load_balancer_public_ip | terraform console -var-file infra.tfvars | tail -n 1 | cut -d\" -f2)
@@ -67,5 +67,4 @@ master_user="ubuntu"
     $bastion_keyfile \
     $master_user \
     $master_keyfile
-echo "=========="
 cat ./kubeconfig
