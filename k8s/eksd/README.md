@@ -199,6 +199,11 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
     * The snapshotting ability is enabled OOTB (using the default `ebs-vsc` VolumeSnapshotClass)
     * The export profile is not set OOTB - you will need to configure it in case you want to export the backups outside of zCompute
     * Keep in mind that k10 is only free up to 5 worker nodes - please consult Kasten's [pricing](https://www.kasten.io/pricing) for anything above that
+    * For self-installation, add the repo and install the chart (no special configurations required):
+         ```shell
+         helm repo add kasten https://charts.kasten.io/
+         helm install --create-namespace k10 kasten/k10 --namespace=kasten-io
+         ```
 
 ## Optional: Make your own EKS-D image (Packer)
 Only relevant if you wish to bake your own EKS-D image
