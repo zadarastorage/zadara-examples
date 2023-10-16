@@ -8,8 +8,8 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 
 ## Prerequisites: zCompute
 * Storage:
-    * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command (via the Zadara toolbox VM or the symp-cli [container](https://hub.docker.com/r/stratoscale/symp-cli) using your zCompute account (domain) and credentials: \
-    `volume volume-types list -c name -c alias -c operational_state -c state -c health -m grep=ProvisioningEnabled` \
+    * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command (via the Zadara toolbox VM or the symp-cli [container](https://hub.docker.com/r/stratoscale/symp-cli)) using your zCompute account (domain) and credentials: \
+    `volume volume-types list -c name -c alias -c operational_state -c health -m grep=ProvisioningEnabled` \
     The EBS CSI will use 'gp2' as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable in the eksd-terraform project
 * Images:
     * Ubuntu 22.04 image should be imported from the Marketplace to be used for the Bastion VM
