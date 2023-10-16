@@ -57,7 +57,7 @@ resource "aws_subnet" "eksd_public" {
   vpc_id     = aws_vpc.eksd_vpc.id
   cidr_block = var.public_cidr
   tags = {
-    Name = "${var.environment}-vpc-eksd-public-subnet"
+    Name = "${var.environment}-vpc-public-subnet"
   }
 
   depends_on = [aws_vpc.eksd_vpc]
@@ -67,7 +67,7 @@ resource "aws_subnet" "eksd_private" {
   vpc_id     = aws_vpc.eksd_vpc.id
   cidr_block = var.private_cidr
   tags = {
-    Name = "${var.environment}-vpc-eksd-private-subnet"
+    Name = "${var.environment}-vpc-private-subnet"
   }
 
   depends_on = [aws_vpc.eksd_vpc]
@@ -76,7 +76,7 @@ resource "aws_subnet" "eksd_private" {
 resource "aws_route_table" "eksd_public" {
   vpc_id = aws_vpc.eksd_vpc.id
   tags = {
-    Name = "${var.environment}-vpc-eksd-public-rt"
+    Name = "${var.environment}-vpc-public-rt"
   }
 
   depends_on = [aws_vpc.eksd_vpc]
@@ -96,7 +96,7 @@ resource "aws_route_table_association" "private_to_private" {
 resource "aws_default_route_table" "eksd_private" {
   default_route_table_id = aws_vpc.eksd_vpc.default_route_table_id
   tags = {
-    Name = "${var.environment}-vpc-eksd-private-rt"
+    Name = "${var.environment}-vpc-private-rt"
   }
 }
 

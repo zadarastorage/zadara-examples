@@ -24,7 +24,7 @@ variable "subnet_id" {
 
 variable "instance_type" {
   type        = string
-  default     = "z4.large"
+  default     = "z8.large"
   description = "The builder instance type"
 }
 

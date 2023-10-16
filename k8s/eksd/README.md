@@ -8,7 +8,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 
 ## Prerequisites: zCompute
 * Storage:
-    * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command via its container (`docker run -it -e SYMP_URL=<zCompute URL> docker.io/stratoscale/symp-cli:latest`) using your zCompute account (domain) and credentials: \
+    * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command (via the Zadara toolbox VM or the symp-cli [container](https://hub.docker.com/r/stratoscale/symp-cli) using your zCompute account (domain) and credentials: \
     `volume volume-types list -c name -c alias -c operational_state -c state -c health -m grep=ProvisioningEnabled` \
     The EBS CSI will use 'gp2' as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable in the eksd-terraform project
 * Images:
@@ -122,7 +122,7 @@ Your cluster comes pre-deployed with the below utilities:
 * CCM - using the AWS Cloud Provider, providing you the below abilities:
     * Instances lifecycle updates (Kubernetes will be aware of new/removed Kubernetes nodes)
     * Instances information labeling (Kubernetes will show EC2 Instance information as node labels)
-    * LoadBalancer [abilities](https://github.com/kubernetes/cloud-provider-aws/blob/master/docs/service_controller.md) - note this is NLB only, and the AWS Load Balancer Controller addon will override this specification
+    * LoadBalancer [abilities](https://github.com/kubernetes/cloud-provider-aws/blob/master/docs/service_controller.md) - note this is NLB only, and the AWS Load Balancer Controller addon will override this specification if enabled
         * Add the below annotation for all LoadBalancer specifications: \
           `service.beta.kubernetes.io/aws-load-balancer-type: nlb`
         * Add the below annotation for all public-facing NLBs (the default is internal-facing): \
@@ -194,7 +194,7 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
           - name: cloud-config
             mountPath: config
         ```
-* Kasten K10 (disabled by default, and internal images are not pre-fetched)
+* Kasten K10 (disabled by default, but internal images are pre-fetched)
     * The deployment assumes the EBS CSI addon is already installed (otherwise k10 will fail to load)
     * The snapshotting ability is enabled OOTB (using the default `ebs-vsc` VolumeSnapshotClass)
     * The export profile is not set OOTB - you will need to configure it in case you want to export the backups outside of zCompute

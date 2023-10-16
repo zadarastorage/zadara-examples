@@ -73,7 +73,11 @@ controller:
 sidecars:
   provisioner:
     additionalArgs:
-      - --timeout=30s
+      - --timeout=60s
+      - --retry-interval-start=4s
+  attacher:
+    additionalArgs: 
+      - --timeout=60s
       - --retry-interval-start=4s
 storageClasses:
   - name: ebs-sc
