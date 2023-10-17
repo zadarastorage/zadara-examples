@@ -37,8 +37,8 @@ For a simplified/demo experience, you can use this option to streamline a cluste
     * `workers_keyname` - the workers Key-Pair name
     * `workers_keyfile` - the workers Key-Pair private PEM file location
 * Optional - create a non-default deployment
-    * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values in the respected `variables.tf` files
-    * For example, you can set the `ebs_csi_volume_type` in the eksd-terraform project to something other than 'gp2' per your storage preferences
+    * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values in the respected `variables.tf` files, or set an environment variable `TF_VAR_<variable name>=<value>` before your run
+    * For example, you can set the `ebs_csi_volume_type` variable in the eksd-terraform project to something other than 'gp2' per your storage preferences
 * Run the `apply-all.sh` script with the additional two parameters of your access_key & secret_key (or use the AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables)
     * The script will take about 10 minutes for a successful minimal deployment of a single master & worker
     * The script can be rerun for re-apply Terraform changes (for example as part of an upgrade procedure)
