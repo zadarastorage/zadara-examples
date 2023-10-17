@@ -7,6 +7,7 @@ The below procedure demostrate how Zadara customers can deploy either vanilla or
 Known limitations
 -----------------
 * zCompute minimal version is **22.09.04** (previous versions don't support the EC2 API required by the AWS Cloud Provider for Kubernetes as an external CCM)
+* For zCompute version 22.09.04, the maximal AWS CCM release to support NLB is `v1.25.3` (later zCompute versions can use any AWS CCM release)
 * EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
 * EBS CSI snapshotting is not fully operational (will create more snapshots than needed and will not delete them upon snapshot removal)
 
@@ -14,14 +15,28 @@ Known limitations
 zCompute prerequisites
 ----------------------
 * Infrastructure considerations
-    * Pre-configured VPC with a public subnet (using routing table and Internet-Gateway) is the minimal requirement, private subnet is advised for all internal components          
-    * The below instructions assume IAM role with the [relevant permissions](https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies "https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies") (EC2, ASG, ELB, etc.) exist and attached to an instance profile which is assigned to all relevant VMs (control & data planes)
-    * You can use the k8s-friendly [infrastructure automation](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform "https://github.com/zadarastorage/zadara-examples/tree/main/k8s/rke2/infra-terraform") which provides the relevant network & IAM preparations
+    * Pre-configured VPC with a public subnet (using routing table and Internet-Gateway) is the minimal requirement, private subnet is advised for all internal components - you can use the VPC wizard to create the neccessary network topology
+    * Pre-configured AWS Role with the [relevant policies](https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies "https://cloud-provider-aws.sigs.k8s.io/prerequisites/#iam-policies") (EC2, ASG, ELB, etc.) - you can just use the managed policies of `AmazonEC2FullAccess`, `ElasticLoadBalancingFullAccess` & `AutoScalingFullAccess` and add them to a new Role with a simple name (without spaces) for clarity
+    * Pre-configured AWS Instance Profile with the previous Role added to - assuming you have an AWS CLI [installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) & configured you can run the below to create it: 
+      ```shell
+      aws iam --endpoint-url https://{zcompute-api}/api/v2/aws/iam/ create-instance-profile --instance-profile-name {name}
+      aws iam --endpoint-url https://{zcompute-api}/api/v2/aws/iam/ add-role-to-instance-profile --instance-profile-name {name} --role-name {role-name}
+      ```
 
-* Control-Plane VM considerations
-    * OS should be Linux (below instructions assume Ubuntu 22.04)
-    * Subnet can be private or public depending on VPC considerations (below instructions assume public)
-    * Size recommendation is z4.large minimum with at least 25GB of disk space
+* VM considerations
+    * The Operating System should be Linux-based (below instructions assume Ubuntu 22.04) - make sure to download the relevant OS image from the Marketplace
+    * Subnet can be private or public depending on the desired network topology (for private subnets, create a bastion on the public subnet and use it to ssh into the private one)
+    * Make sure to update the relevant Security Group and allow relevant communication rules - specifically ports 22 (for SSH) and 6443 (for Kubernetes API server)
+    * The minimal recommendation for instance type is z4.large
+    * The minimal recommendation for root disk size is 25GB
+    * Once the instance is created, get its AWS ID and associate it with the aforementioned Instance Profile - you can use the below AWS CLI commands: 
+      ```shell
+      # This will get you the Instance Profile's ARN based on its name:
+      aws iam --endpoint-url https://{zcompute-api}/api/v2/aws/iam/ get-instance-profile --instance-profile-name {name} --query 'InstanceProfile.Arn'
+      
+      # This will associate the Instance Profile with the VM based on the VM's instance ID:
+      aws ec2 --endpoint-url https://{zcompute-api}/api/v2/aws/ec2/ associate-iam-instance-profile --iam-instance-profile Arn={ARN},Name={name} --instance-id {instance-id}
+      ```
         
 
 Kubernetes prerequisites
@@ -96,8 +111,8 @@ Kubernetes prerequisites
     ```shell
     sudo apt-get update
     sudo apt-get install -y apt-transport-https ca-certificates curl
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
     sudo apt-get update
     sudo apt-get install -y kubelet kubeadm kubectl
     sudo apt-mark hold kubelet kubeadm kubectl
@@ -105,7 +120,7 @@ Kubernetes prerequisites
     
 *   Note: In releases older than Debian 12 and Ubuntu 22.04, `/etc/apt/keyrings` does not exist by default. You can create this directory if you need to, making it world-readable but writeable only by admins.
         
-*   Override the original binaries with the ones compatible to your desired EKS-D [release](https://github.com/aws/eks-distro#releases "https://github.com/aws/eks-distro#releases") (check the relevant URI in the manifest), for example for deploying EKS-D 1.27 release #8 which is currently the latest and based on Kubernetes 1.27.3:
+*   For EKS-D, override the original binaries with the ones compatible to your desired EKS-D [release](https://github.com/aws/eks-distro#releases "https://github.com/aws/eks-distro#releases") (check the relevant URI in the manifest), for example for deploying EKS-D 1.27 release #8 which is currently the latest and based on Kubernetes 1.27.3:
     ```shell
     cd /usr/bin
     sudo rm kubelet kubeadm kubectl
@@ -126,12 +141,12 @@ Control-plane installation
 
 *   Note that kubeadm search for images based on [naming conventions](https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#custom-images "https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/#custom-images") which in some cases are not honored by EKS-D and we need to align them one way or another:
     
-    *   Use the kubeadm image pull/list commands to make sure all images are available - specifically pause, etcd & coredns have naming compatibility issue and requires local re-tagging:  
+    *   Run `sudo kubeadm config images pull` (or `list`) to make sure all images are available - for EKS-D you'll need to prodive the AWS image repository & EKS-D release, for example:  
         ```shell
         sudo kubeadm config images pull --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8
         ```
         
-    *   If you try to pull the images you will find some are “missing” - specifically we need to make sure etcd & coredns will be “corrected” per the EKS-D manifest. We can workaround the issue in 2 possible ways:
+    *   If you try to pull the EKS-D images you will find some are “missing” due to naming conventions - specifically we need to make sure etcd & coredns will be “corrected” per the EKS-D manifest. We can workaround the issue in 2 possible ways:
         
         *   Pre-pull and re-tag the relevant images locally (as suggested on the [EKS-D docs](https://distro.eks.amazonaws.com/users/install/kubeadm-onsite/#set-up-a-control-plane-node "https://distro.eks.amazonaws.com/users/install/kubeadm-onsite/#set-up-a-control-plane-node") in step 3 and [other examples](https://aws.amazon.com/blogs/storage/running-kubernetes-cluster-with-amazon-eks-distro-across-aws-snowball-edge/ "https://aws.amazon.com/blogs/storage/running-kubernetes-cluster-with-amazon-eks-distro-across-aws-snowball-edge/")) - although the documented docker-based approach requires docker as well as AWS [authentication](https://docs.aws.amazon.com/AmazonECR/latest/public/getting-started-cli.html#cli-authenticate-registry "https://docs.aws.amazon.com/AmazonECR/latest/public/getting-started-cli.html#cli-authenticate-registry"))
             
@@ -148,8 +163,8 @@ Control-plane installation
         
 *   Initialize kubeadm
     
-    *   Run the initialization with the EKS-D specs and the targeted internal pods network CIDR (here we use 10.244.0.0/16):  
-        `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16`
+    *   Run the kubeadm initialization with the targeted internal pods network CIDR (here we use 10.244.0.0/16) and again the optional EKS-D parameters if relevant:  
+        `sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8`
         
     * For public-facing Kubernetes clusters, assuming your control plane VM has an additional public IP, you may want to add the `--apiserver-cert-extra-sans` flag with the relevant IP address so later on you can refer to that IP as an alternative server address which will be respected by the server certificate. 
 
@@ -229,7 +244,7 @@ Control-plane installation
         export INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
         # Change the kubelet service configuration to use the new settings
-        sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+        sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", $(systemctl show kubelet | grep DropInPaths | cut -d= -f 2)
 
         # Restart kubelet with the new config
         sudo systemctl daemon-reload
@@ -295,7 +310,7 @@ Control-plane installation
         - --cluster-name={kubernetes-name, for example kubernetes}
         - --configure-cloud-routes=false
         image:
-          tag: {relevant image version for your EKS-D, for example v1.27.1}
+          tag: {relevant image version for your zCompute/EKS-D, for example v1.25.3}
         cloudConfigPath: config/cloud.conf
         extraVolumes:
         - name: cloud-config
@@ -377,8 +392,8 @@ If you wish to create an HA-based cluster instead of a single control-plane node
         
     *   Add all relevant control-plane VMs as targets (you can start with the initial seeder VM and later add the rest)
         
-*   Initialize the cluster using the LB private IP as the control-plane endpoint, add the public IP as an alternative SAN (if relevant, only for public-facing clusters) and upload the cluster certificates as a 2-hours TTL secret:  
-    `sudo kubeadm init --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8 --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-private-ip>:6443 --apiserver-cert-extra-sans <LB-public-ip> --upload-certs`
+*   Initialize the cluster using the LB private IP as the control-plane endpoint, add the public IP as an alternative SAN (if relevant, only for public-facing clusters) and upload the cluster certificates as a 2-hours TTL secret - use the EKS-D parameters if relevant:  
+    `sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint <LB-private-ip>:6443 --apiserver-cert-extra-sans <LB-public-ip> --upload-certs --image-repository public.ecr.aws/eks-distro/kubernetes --kubernetes-version v1.27.3-eks-1-27-8`
     
 *   Continue with the cluster deployment as usual - note the kubeconfig file will reflect the LB private IP as the api server URL and you may want to change it to the public IP (so you wouldn’t need to proxy into it for remote access)
     
@@ -429,7 +444,7 @@ If you wish to add data-plane (worker) nodes to your Kubernetes cluster:
     export INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 
     # Change the kubelet service configuration
-    sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$INSTANCE_ID", $(systemctl show kubelet | grep DropInPaths | cut -d= -f 2)
 
     # Restart kubelet with the new config
     sudo systemctl daemon-reload
@@ -556,7 +571,7 @@ EBS CSI
 
         cat <<EOF | tee ~/values-aws-ebs-csi-driver.yaml
         controller:
-        env:
+          env:
             - name: AWS_EC2_ENDPOINT
               value: 'https://{zCompute_hostname}/api/v2/aws/ec2'
         EOF
