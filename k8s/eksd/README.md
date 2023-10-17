@@ -5,6 +5,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 * zCompute minimal version is **23.08** (previous versions will not support the EKS-D initialization phase which is implemented in Step #2) in VSC-mode
 * EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
 * Upgraded zCompute clouds must have at least one AWS-compatible VolumeType API Alias (io1 / io2 / gp2 / gp3 / sc1 / st1 / standard / sbp1 / sbg1) to be available for provisioning (fresh 23.08 installations have them OOTB)
+* EKS-D cluster name (set by the `environment` variable as mentioned below) must be unique for the account
 
 ## Prerequisites: zCompute
 * Storage:
