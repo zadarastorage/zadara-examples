@@ -123,6 +123,12 @@ extraVolumes:
 extraVolumeMounts:
   - name: cloud-config
     mountPath: config
+tolerations:
+- effect: NoSchedule
+  key: node-role.kubernetes.io/control-plane
+  operator: Equal
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
 EOF
 
 # Kasten
