@@ -11,10 +11,10 @@ resource "aws_lb" "eksd_masters_private" {
   load_balancer_type = "network"
   subnets            = [aws_subnet.eksd_private.id]
   security_groups = [
-    aws_security_group.eksd_k8s.id,
+    aws_security_group.eksd_k8s_sg.id,
   ]
   tags = {
-    ManagedBy = "eksd terraform"
+    ManagedBy = "infra-terraform"
   }
 
   depends_on = [aws_route.igw, aws_route_table_association.private_to_private]
@@ -27,10 +27,10 @@ resource "aws_lb" "eksd_masters_public" {
   load_balancer_type = "network"
   subnets            = [aws_subnet.eksd_public.id]
   security_groups = [
-    aws_security_group.eksd_k8s.id,
+    aws_security_group.eksd_k8s_sg.id,
   ]
   tags = {
-    ManagedBy = "eksd terraform"
+    ManagedBy = "infra-terraform"
   }
 
   depends_on = [aws_route.igw, aws_route_table_association.public_to_public]

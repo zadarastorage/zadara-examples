@@ -6,6 +6,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 * EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
 * Upgraded zCompute clouds must have at least one AWS-compatible VolumeType API Alias (io1 / io2 / gp2 / gp3 / sc1 / st1 / standard / sbp1 / sbg1) to be available for provisioning (fresh 23.08 installations have them OOTB)
 * EKS-D cluster name (set by the `environment` variable as mentioned below) must be unique for the account
+* The deployment will create a bastion VM with port 22 (SSH) exposed to the world (and EKS-D nodes with port 22 exposed to the bastion) - you may want to limit the exposure, stop or even terminate the bastion VM post-deployment
 
 ## Prerequisites: zCompute
 * Storage:
@@ -62,7 +63,7 @@ For a simplified/demo experience, you can use this option to streamline a cluste
     * Routing tables to accomodate public/private subnets
     * Default Security Group for the VPC as well as RKE2-related one (based on the SG itself)
     * Bastion VM on the public subnet (**accessible to the world by default**) with access to the private subnet (where the Kubernetes nodes will be located)
-    * Network Load Balancer to hold the Kubernetes API Server endpoints - accessible to the world by default, can be hardened for Bastion-only access if you add the variable `expose_k8s_api_publicly = false`
+    * Network Load Balancer to hold the Kubernetes API Server endpoints - accessible to the world by default, can be hardened for internal-only access if you add the variable `expose_k8s_api_publicly = false`
     * Elastic IPs for the Bastion as well as the Network Load Balancer
 * `terraform apply --auto-approve` - this will make the actual changes on the environment
 * Due to current zCompute limitation, you will need to re-apply Terraform again in order to populate some resource tags (resource names, etc.)
@@ -100,6 +101,7 @@ For a simplified/demo experience, you can use this option to streamline a cluste
         * `masters_instance_type` - the workers VM size (minimal is z2.large, defaulting to z8.large)
         * `masters_volume_size` - the masters disk size (minimal is 25GB, defaulting to 50GB)
         * `workers_volume_size` - the workers disk size (minimal is 25GB, defaulting to 100GB)
+        * `cni_provider` - choose the CNI from a list of flannel (default), calico or cilium (experimental)
         * `ebs_csi_volume_type` - the cloud's storage VolumeType (defaulting to gp2)
         * `install_ebs_csi` - whether to deploy the EBS CSI driver addon (defaulting to true)
         * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon (defaulting to true)

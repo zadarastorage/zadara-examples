@@ -10,9 +10,9 @@ resource "aws_instance" "bastion" {
   instance_type          = var.bastion_instance_type
   key_name               = var.bastion_keyname
   subnet_id              = aws_subnet.eksd_public.id
-  vpc_security_group_ids = [aws_security_group.eksd_k8s.id]
+  vpc_security_group_ids = [aws_security_group.eksd_bastion_sg.id]
   tags = {
     Name = "bastion"
   }
-  depends_on = [ aws_route.igw, aws_route_table_association.public_to_public ]
+  depends_on = [aws_route.igw, aws_route_table_association.public_to_public]
 }
