@@ -12,9 +12,8 @@ sudo helm repo add autoscaler https://kubernetes.github.io/autoscaler
 sudo helm repo add kasten https://charts.kasten.io
 sudo helm repo update
 
-# AWS CCM and general cloud-config
-sudo helm pull aws-cloud-controller-manager/aws-cloud-controller-manager -d /etc/kubernetes/zadara/
-sudo helm template aws-cloud-controller-manager/aws-cloud-controller-manager | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
+
+# General cloud-config
 cat <<EOF | sudo tee /etc/kubernetes/zadara/cloud-config.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -39,7 +38,18 @@ data:
     Region=us-east-1
     URL=API_ENDPOINT/api/v2/aws/elbv2
     SigningRegion=us-east-1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-meta
+data:
+  endpoint: API_ENDPOINT/api/v2/aws/ec2
 EOF
+
+# CCM (AWS Cloud Provider for Kubernetes)
+sudo helm pull aws-cloud-controller-manager/aws-cloud-controller-manager -d /etc/kubernetes/zadara/
+sudo helm template aws-cloud-controller-manager/aws-cloud-controller-manager | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
 
 # CNI (Flannel, Calico & Cilium)
 sudo wget -qO /etc/kubernetes/zadara/kube-flannel.yml https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
@@ -65,11 +75,7 @@ sudo helm pull aws-ebs-csi-driver/aws-ebs-csi-driver -d /etc/kubernetes/zadara/
 sudo helm template aws-ebs-csi-driver/aws-ebs-csi-driver | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
 cat <<EOF | sudo tee /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
 controller:
-  env:
-    - name: AWS_EC2_ENDPOINT
-      value: 'API_ENDPOINT/api/v2/aws/ec2'
-    - name: AWS_REGION
-      value: 'us-east-1'
+  region: 'us-east-1'
 sidecars:
   provisioner:
     additionalArgs:
