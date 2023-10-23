@@ -24,6 +24,18 @@ variable "eksd_ami" {
   description = "AWS id of the EKS-D image to be used for all Kubernetes nodes"
 }
 
+variable "masters_eksd_ami" {
+  type        = string
+  default     = null
+  description = "AWS id of the EKS-D image to be used for all control-plane Kubernetes nodes"
+}
+
+variable "workers_eksd_ami" {
+  type        = string
+  default     = null
+  description = "AWS id of the EKS-D image to be used for all data-plane Kubernetes nodes"
+}
+
 variable "masters_volume_size" {
   type    = string
   default = "50"
@@ -35,26 +47,26 @@ variable "workers_volume_size" {
 }
 
 variable "masters_count" {
-  type    = number
-  default = 1
+  type        = number
+  default     = 1
   description = "Initial masters ASG capacity"
 }
 
 variable "masters_addition" {
-  type    = number
-  default = 0
+  type        = number
+  default     = 0
   description = "Maximal increased capacity to masters ASG above initial size"
 }
 
 variable "workers_count" {
-  type    = number
-  default = 1
+  type        = number
+  default     = 1
   description = "Initial workers ASG capacity"
 }
 
 variable "workers_addition" {
-  type    = number
-  default = 3
+  type        = number
+  default     = 3
   description = "Maximal increased capacity to workers ASG above initial size"
 }
 
