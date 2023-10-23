@@ -42,8 +42,13 @@ then
     exit 1
 fi
 
-# Replace the original API-server endpoint from the internal IP to the pulic IP
-sed "s/${apiserver_private}/${apiserver_public}/g" ./kubeconfig.temp > ./kubeconfig
+# Replace the original API-server endpoint from the internal IP to the public IP (only if public IP is really provided)
+if [[ $apiserver_public != "None" ]];
+then
+    sed "s/${apiserver_private}/${apiserver_public}/g" ./kubeconfig.temp > ./kubeconfig
+else
+    cp ./kubeconfig.temp ./kubeconfig
+fi
 
 # Cleanup
 ssh -i $bastion_keypair -o StrictHostKeyChecking=no $bastion_user@$bastion_ip "rm -f ~/kubeconfig ~/master_keypair.pem"

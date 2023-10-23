@@ -19,7 +19,7 @@ output "private_subnet_id" {
 }
 
 output "security_group_id" {
-  value = aws_security_group.eksd_k8s.id
+  value = aws_security_group.eksd_k8s_sg.id
 }
 
 output "masters_load_balancer_id" {

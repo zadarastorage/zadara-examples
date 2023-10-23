@@ -154,7 +154,6 @@ local_cp_node_wait() {
       sudo chmod 644 /etc/kubernetes/admin.conf
       if ${install_ebs_csi}; then
         info "Installing Addon: EBS CSI driver"
-        sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
         sudo sed -i s,gp2,${ebs_csi_volume_type}, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
         kubectl apply $(ls /etc/kubernetes/zadara/*snapshot.storage.k8s.io_*.yaml | awk ' { print " -f " $1 } ')
         kubectl apply -n kube-system -f /etc/kubernetes/zadara/rbac-snapshot-controller.yaml
