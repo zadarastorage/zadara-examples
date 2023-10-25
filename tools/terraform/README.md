@@ -16,7 +16,7 @@ Follow the [HashiCorp documentation](https://developer.hashicorp.com/terraform/d
 
 ## Basic example
 The below code snippet will configure Terraform to work againts a given zCompute cluster with given credentials and create a VPC per the provider's [documentation](https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs/resources/vpc):
-```json
+```shell
 terraform {
   required_providers {
     aws = {
