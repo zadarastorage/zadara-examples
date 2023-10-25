@@ -1,7 +1,3 @@
-output "api_endpoint" {
-  value = var.api_endpoint
-}
-
 output "environment" {
   value = var.environment
 }
@@ -36,5 +32,5 @@ output "bastion_ip" {
 
 output "x_loadbalancer_script" {
   description = "Pointer to script which can get the Load Balancer private & public IPs"
-  value       = "${path.module}/get_loadbalancer.sh ${var.api_endpoint} ${aws_eip.bastion.public_ip} ${local.nlb_private_dns} <access_key> <secret_key> <bastion_user> <bastion_key>"
+  value       = "${path.module}/get_loadbalancer.sh ${aws_eip.bastion.public_ip} ${local.nlb_private_dns} <access_key> <secret_key> <bastion_user> <bastion_key>"
 }

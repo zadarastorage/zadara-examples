@@ -29,7 +29,6 @@ terraform init --reconfigure
 terraform apply -compact-warnings --auto-approve -var-file ../terraform.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
 terraform apply -compact-warnings --auto-approve -var-file ../terraform.tfvars -var "cluster_access_key=$access_key" -var "cluster_access_secret_id=$secret_key"
 terraform output > ../infra.tfvars
-api_endpoint=$(terraform output -raw api_endpoint)
 bastion_ip=$(terraform output -raw bastion_ip)
 masters_load_balancer_internal_dns=$(terraform output -raw masters_load_balancer_internal_dns)
 
@@ -38,7 +37,6 @@ cd ..
 bastion_user=$(echo var.bastion_user | terraform console | cut -d\" -f2)
 bastion_keyfile=$(echo var.bastion_keyfile | terraform console | cut -d\" -f2)
 ./infra-terraform/get_loadbalancer.sh \
-    $api_endpoint \
     $bastion_ip \
     $masters_load_balancer_internal_dns \
     $access_key \
