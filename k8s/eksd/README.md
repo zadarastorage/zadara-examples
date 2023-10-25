@@ -142,72 +142,24 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
 * EBS CSI driver (enabled by default):
     * The `ebs-cs` StorageClass is pre-configured with the VolumeType and set as the default StorageClass (you may [override](https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/) it with other CSIs)
     * The snapshotting abilities are pre-configured with the `ebs-vsc` VolumeSnapshotClass (including the Kasten-ready [annotation](https://docs.kasten.io/latest/install/storage.html#csi-snapshot-configuration) for seamless operability)
-    * For self-installation, use the below values with the helm chart: 
-        ```yaml
-        controller:
-          env:
-            - name: AWS_EC2_ENDPOINT
-              value: '<API_ENDPOINT>/api/v2/aws/ec2'
-            - name: AWS_REGION
-              value: 'us-east-1'
-        storageClasses:
-          - name: ebs-sc
-            annotations:
-              storageclass.kubernetes.io/is-default-class: "true"
-            parameters:
-              type: "<EBS ALIAS>"
-        volumeSnapshotClasses: 
-          - name: ebs-vsc
-            annotations:
-              snapshot.storage.kubernetes.io/is-default-class: "true"
-              k10.kasten.io/is-snapshot-class: "true"
-            deletionPolicy: Delete
-        ```
+    * For self-installation, use the dedicated [instructions](../../addons/aws-ebs-csi-driver/README.md)
 * AWS Load Balancer Controller (enabled by default)
     * For NLB - use the LoadBalancer service per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.4/guide/service/annotations)
       * The latest controller version overrides the built-in LoadBalancer resource, so you just need to add the `service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing` annotation for internet-facing NLB (as the default is internal)
       * As a [known limitation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/service/nlb/#security-group), the controller wouldn't create the relevant security group to the NLB - rather, it will add the relevant rules to the worker node's security group and you can attach this (or another) security group to the NLB via the zCompute GUI, AWS CLI or Symp
     * For ALB - use the Ingress resource per the [documentation](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/ingress/annotations)
       * By default all Ingress resources are [internal-facing](https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.6/guide/ingress/annotations/#scheme) - if you want your ALB to get a public IP you will have to add the `alb.ingress.kubernetes.io/scheme: internet-facing` annotation
-    * For self-installation, use the below values with the helm chart: 
-      ```yaml
-      clusterName: <CLUSTER_NAME>
-      vpcId: <VPC_ID>
-      awsApiEndpoints: "ec2=<API_ENDPOINT>/api/v2/aws/ec2,elasticloadbalancing=<API_ENDPOINT>/api/v2/aws/elbv2,acm=<API_ENDPOINT>/api/v2/aws/acm,sts=<API_ENDPOINT>/api/v2/aws/sts"
-      enableShield: false
-      enableWaf: false
-      enableWafv2: false
-      region: us-east-1
-      ingressClassConfig:
-        default: true
-      ```
+    * For self-installation, use the dedicated [instructions](../../addons/aws-load-balancer-controller/README.md) 
 * Cluster Autoscaler (enabled by default)
     * The configuration is pre-populated to use the [auto-discovery mode](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#auto-discovery-setup) based on the pre-populated tags on the worker ASG (`k8s.io/cluster-autoscaler/enabled` and `k8s.io/cluster-autoscaler/<cluster-name>`) where cluster-name is the environment variable set on the eksd-terraform project
     * If you opt to use the [manual mode](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/cloudprovider/aws/README.md#manual-configuration)  - remember to define the specific workers ASG/s name/s and their lower/upper bounds on the [autoscalingGroups](https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml#L39) values
-    * For self-installation, use the below values with the helm chart: 
-        ```yaml
-        awsRegion: us-east-1
-        autoDiscovery:
-          clusterName: <CLUSTER_NAME>
-        cloudConfigPath: config/cloud.conf
-        extraVolumes:
-          - name: cloud-config
-            configMap:
-              name: cloud-config
-        extraVolumeMounts:
-          - name: cloud-config
-            mountPath: config
-        ```
+    * For self-installation, use the dedicated [instructions](../../addons/cluster-autoscaler/README.md)
 * Kasten K10 (disabled by default, but internal images are pre-fetched)
     * The deployment assumes the EBS CSI addon is already installed (otherwise k10 will fail to load)
     * The snapshotting ability is enabled OOTB (using the default `ebs-vsc` VolumeSnapshotClass)
     * The export profile is not set OOTB - you will need to configure it in case you want to export the backups outside of zCompute
     * Keep in mind that k10 is only free up to 5 worker nodes - please consult Kasten's [pricing](https://www.kasten.io/pricing) for anything above that
-    * For self-installation, add the repo and install the chart (no special configurations required):
-         ```shell
-         helm repo add kasten https://charts.kasten.io/
-         helm install --create-namespace k10 kasten/k10 --namespace=kasten-io
-         ```
+    * For self-installation, use the dedicated [instructions](../../addons/kasten-k10/README.md)
 
 ## Optional: Make your own EKS-D image (Packer)
 Only relevant if you wish to bake your own EKS-D image

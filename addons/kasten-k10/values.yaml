@@ -1,0 +1,8 @@
+externalGateway:
+  create: true
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+auth:
+  basicAuth:
+    enabled: true
+    htpasswd: 'kasten:{SHA}7NMrp20iv1w7D2GbHA9kTOq4DV0='
