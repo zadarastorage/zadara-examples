@@ -5,7 +5,7 @@
 * Terraform can be installed by following the [HashiCorp documentation](https://developer.hashicorp.com/terraform/downloads?product_intent=terraform)
   * Zadara recommends using version 1.5 and above for optimal experience
   * Due to recent changes in HashiCorp's [licensing](https://www.hashicorp.com/blog/hashicorp-adopts-business-source-license) affecting version 1.6 and above, users may consider switching to OpenTofu - apart from the installation process the only thing that will change is the actual command name (`tofu` instead of `terraform`)
-* OpenTofu can be installed using the [release](https://github.com/opentofu/opentofu/releases) binary, for example on Ubuntu: \
+* OpenTofu can be installed using the [release](https://github.com/opentofu/opentofu/releases) binary, for example on Ubuntu:
   ```shell
   wget https://github.com/opentofu/opentofu/releases/download/v1.6.0-alpha3/tofu_1.6.0-alpha3_amd64.deb
   sudo dpkg -i tofu_1.6.0-alpha3_amd64.deb
@@ -20,7 +20,8 @@
 * Make sure to get your AWS credentials as mentioned on the [AWS CLI](./../aws-cli/README.md)
 
 ## Basic example
-The below code snippet will create a Terraform project (folder & `main.tf` file) configured to work againts a specific zCompute (`cloud.zadara.com` in this example) and invoke the terraform CLI with given credentials parameters (AAA/BBB in this example). Once invoked it will authenticate with zCompute and create a VPC with CIDR per the provider's [documentation](https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs/resources/vpc):
+* The below code snippet will create a Terraform/OpenTofu project (folder & `main.tf` file) configured to work againts a specific zCompute (`cloud.zadara.com` in this example) and invoke the CLI with given credentials parameters (`AAA` & `BBB` in this example). 
+* Once invoked, Terraform/OpenTofu will authenticate with zCompute and create a VPC with CIDR per the provider's [documentation](https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs/resources/vpc)
 ```shell
 mkdir tf-basic-example
 cd ./tf-basic-example
