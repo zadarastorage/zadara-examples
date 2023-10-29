@@ -18,11 +18,11 @@ then
   unset AWS_DEFAULT_REGION
   unset AWS_ENDPOINT_URL_EC2
   unset AWS_ENDPOINT_URL_ELB
-  unset AWS_ENDPOINT_URL_ASG
   unset AWS_ENDPOINT_URL_IAM
   unset AWS_ENDPOINT_URL_SNS
   unset AWS_ENDPOINT_URL_STS
   unset AWS_ENDPOINT_URL_ACM
+  unset AWS_ENDPOINT_URL_AUTO_SCALING
   unset AWS_ENDPOINT_URL_CLOUDWATCH
   unset AWS_ENDPOINT_URL_ROUTE53
 else
@@ -31,11 +31,11 @@ else
   export AWS_DEFAULT_REGION=us-east-1
   export AWS_ENDPOINT_URL_EC2=$1/api/v2/aws/ec2/
   export AWS_ENDPOINT_URL_ELB=$1/api/v2/aws/elbv2/
-  export AWS_ENDPOINT_URL_ASG=$1/api/v2/aws/autoscaling/
   export AWS_ENDPOINT_URL_IAM=$1/api/v2/aws/iam/
   export AWS_ENDPOINT_URL_SNS=$1/api/v2/aws/sns/
   export AWS_ENDPOINT_URL_STS=$1/api/v2/aws/sts/
   export AWS_ENDPOINT_URL_ACM=$1/api/v2/aws/acm/
+  export AWS_ENDPOINT_URL_AUTO_SCALING=$1/api/v2/aws/autoscaling/
   export AWS_ENDPOINT_URL_CLOUDWATCH=$1/api/v2/aws/cloudwatch/
   export AWS_ENDPOINT_URL_ROUTE53=$1/api/v2/aws/route53/
 fi
