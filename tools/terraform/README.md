@@ -15,7 +15,7 @@ Follow the [HashiCorp documentation](https://developer.hashicorp.com/terraform/d
 * Make sure to get your AWS credentials as mentioned on the [AWS CLI](./../aws-cli/README.md)
 
 ## Basic example
-The below code snippet will create a Terraform project (folder & `main.tf` file) pre-configured to work againts a specific zCompute (`cloud.zadara.com` in this example) and invoke the terraform CLI with given API endpoint & credentials parameters. Once invoked it will create a VPC with CIDR per the provider's [documentation](https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs/resources/vpc):
+The below code snippet will create a Terraform project (folder & `main.tf` file) configured to work againts a specific zCompute (`cloud.zadara.com` in this example) and invoke the terraform CLI with given credentials parameters (AAA/BBB in this example). Once invoked it will authenticate with zCompute and create a VPC with CIDR per the provider's [documentation](https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs/resources/vpc):
 ```shell
 mkdir tf-basic-example
 cd ./tf-basic-example
@@ -54,5 +54,5 @@ resource "aws_vpc" "eksd_vpc" {
 }
 EOF
 terraform init
-terraform apply -auto-approve -var access_key=abc123 -var secret_key=321cba
+terraform apply -auto-approve -var access_key=AAA -var secret_key=BBB
 ```
