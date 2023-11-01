@@ -20,7 +20,7 @@
 * Make sure to get your AWS credentials as mentioned on the [AWS CLI](./../aws-cli/README.md)
 
 ## Basic example
-* The below code snippet will create a Terraform/OpenTofu project (folder & `main.tf` file) configured to work againts a specific zCompute (`cloud.zadara.com` in this example) and invoke the CLI with given credentials parameters (`AAA` & `BBB` in this example). 
+* The below code snippet will create a Terraform/OpenTofu project (folder & `main.tf` file) configured to work againts a specific zCompute (`cloud.zadara.com` in this example) and invoke the CLI with given credentials parameters (`AAA` & `BBB` in this example)
 * Once invoked, Terraform/OpenTofu will authenticate with zCompute and create a VPC with CIDR per the provider's [documentation](https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs/resources/vpc)
 ```shell
 mkdir tf-basic-example

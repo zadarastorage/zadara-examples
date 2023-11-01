@@ -29,7 +29,7 @@ sudo ./aws/install
 EOF
 
 # Get the internal API endpoint
-api_endpoint=$(ssh -i /Users/roy/Downloads/clusteron.pem ubuntu@10.43.133.62 "\
+api_endpoint=$(ssh -i $bastion_key -o StrictHostKeyChecking=no $bastion_user@$bastion_ip "\
     curl -s http://169.254.169.254/openstack/latest/meta_data.json | \
     jq -c '.cluster_url'" | cut -d\" -f2)
 
