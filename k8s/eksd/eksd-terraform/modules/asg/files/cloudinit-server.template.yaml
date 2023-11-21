@@ -1,0 +1,70 @@
+#cloud-config
+write_files:
+  - path: /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
+    owner: root:root
+    permissions: "0644"
+    content: |
+      args:
+        - --v=2
+        - --cloud-provider=aws
+        - --cloud-config=config/cloud.conf
+        - --allocate-node-cidrs=false
+        - --cluster-cidr=${ pod_network }
+        - --cluster-name=${ cluster_name }
+        - --configure-cloud-routes=false
+      image:
+          tag: "CCM_VER"
+      cloudConfigPath: config/cloud.conf
+      extraVolumes:
+        - name: cloud-config
+          configMap:
+            name: cloud-config
+        - name: trusted-root-cas
+          hostPath:
+            path: /etc/ssl/certs/ca-certificates.crt
+          type: file
+      extraVolumeMounts:
+        - name: cloud-config
+          mountPath: config
+        - name: trusted-root-cas
+          mountPath: /etc/ssl/certs/zadara-ca.crt
+  - path: /etc/cron.d/eksd-reload-certs
+    owner: root:root
+    permissions: "0644"
+    content: "0 */1 * * * root kubeadm init phase upload-certs --upload-certs --certificate-key ${ certificate } \n"
+  - path: /etc/kubernetes/zadara/kubeadm-config.yaml
+    owner: root:root
+    permissions: "0644"
+    content: |
+      apiVersion: kubeadm.k8s.io/v1beta3
+      kind: InitConfiguration
+      bootstrapTokens:
+        - token: "${ token }"
+          description: "predefined kubeadm bootstrap token that never expires"
+          ttl: "0"
+      certificateKey: "${ certificate }"
+      ---
+      apiVersion: kubeadm.k8s.io/v1beta3
+      kind: ClusterConfiguration
+      networking:
+        podSubnet: "${ pod_network }"
+      kubernetesVersion: "KUBE_VER"
+      controlPlaneEndpoint: "${ server_url }"
+      etcd:
+        local:
+          imageRepository: "public.ecr.aws/eks-distro/etcd-io"
+          imageTag: "ETCD_VER"
+          dataDir: "/var/lib/etcd"
+      dns:
+        imageRepository: "public.ecr.aws/eks-distro/coredns"
+        imageTag: "DNS_VER"
+      apiServer:
+        certSANs:
+          %{~ for single_san in san ~}
+          - ${ single_san }
+          %{~ endfor ~}
+      imageRepository: "public.ecr.aws/eks-distro/kubernetes"
+      clusterName: "${ cluster_name }"
+ca_certs:
+  trusted: |
+    ${indent(4, root_ca_cert)}

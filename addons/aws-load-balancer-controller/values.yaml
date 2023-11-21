@@ -1,0 +1,9 @@
+clusterName: <CLUSTER_NAME>
+vpcId: <VPC_ID>
+awsApiEndpoints: "ec2=<API_ENDPOINT>/api/v2/aws/ec2,elasticloadbalancing=<API_ENDPOINT>/api/v2/aws/elbv2,acm=<API_ENDPOINT>/api/v2/aws/acm,sts=<API_ENDPOINT>/api/v2/aws/sts"
+enableShield: false
+enableWaf: false
+enableWafv2: false
+region: us-east-1
+ingressClassConfig:
+  default: true

@@ -1,0 +1,11 @@
+awsRegion: us-east-1
+autoDiscovery:
+  clusterName: <CLUSTER_NAME>
+cloudConfigPath: config/cloud.conf
+extraVolumes:
+  - name: cloud-config
+    configMap:
+      name: cloud-config
+extraVolumeMounts:
+  - name: cloud-config
+    mountPath: config
