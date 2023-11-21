@@ -30,6 +30,8 @@ module "workers_asg" {
   min_size     = var.workers_count
   desired_size = var.workers_count
 
+  root_ca_cert = var.root_ca_cert_path == "" ? "" : file(var.root_ca_cert_path)
+
   instance_tags = [
     {
       key   = "kubernetes.io/role"

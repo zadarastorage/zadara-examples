@@ -167,7 +167,7 @@ local_cp_node_wait() {
       fi
       if ${install_kasten_k10}; then
         info "Installing Addon: Kasten K10"
-        helm install --create-namespace --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz) 
+        helm install --create-namespace --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz)
       fi
       if ${install_lb_controller}; then
         sleep 2  # allow existing helm-level installations to finish as loadbalancer resource change may affect them

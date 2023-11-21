@@ -42,14 +42,14 @@ variable "bastion_ami" {
 }
 
 variable "bastion_user" {
-  type    = string
-  default = "ubuntu"
+  type        = string
+  default     = "ubuntu"
   description = "Username for the bastion VM (depending on the base image, this can be either ubuntu or centos)"
 }
 
 variable "masters_keyname" {
-  type    = string
-  default = "masters"
+  type        = string
+  default     = "masters"
   description = "Key-Pair name for the masters VMs"
 }
 
@@ -60,8 +60,8 @@ variable "masters_keyfile" {
 }
 
 variable "workers_keyname" {
-  type    = string
-  default = "workers"
+  type        = string
+  default     = "workers"
   description = "Key-Pair name for the workers VMs"
 }
 
@@ -72,13 +72,13 @@ variable "workers_keyfile" {
 }
 
 variable "masters_load_balancer_private_ip" {
-  type    = string
-  default = ""
+  type        = string
+  default     = ""
   description = "Private IP of the NLB - to be populated automatically"
 }
 
 variable "masters_load_balancer_public_ip" {
-  type    = string
-  default = ""
+  type        = string
+  default     = ""
   description = "Public IP of the NLB - to be populated automatically"
 }
