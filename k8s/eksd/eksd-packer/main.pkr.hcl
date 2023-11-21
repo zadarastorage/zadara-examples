@@ -27,7 +27,7 @@ source "amazon-ebs" "ubuntu" {
 
   launch_block_device_mappings {
     device_name = "/dev/vda1"
-    volume_size = 25
+    volume_size = 30
     #volume_type = "gp2"
     delete_on_termination = true
   }

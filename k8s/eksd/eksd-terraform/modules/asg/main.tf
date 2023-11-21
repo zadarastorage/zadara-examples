@@ -13,6 +13,7 @@ data "cloudinit_config" "this" {
       pod_network  = var.pod_network
       certificate  = var.eksd_certificate
       san          = var.eksd_san
+      root_ca_cert = var.root_ca_cert
     })
   }
 
@@ -34,6 +35,7 @@ data "cloudinit_config" "this" {
       vpc_id                = var.vpc_id
       install_autoscaler    = var.install_autoscaler
       install_kasten_k10    = var.install_kasten_k10
+      root_ca_cert          = var.root_ca_cert
     })
   }
 

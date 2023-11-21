@@ -25,7 +25,7 @@ variable "volume_size" {
 }
 
 variable "cluster_name" {
-  type        = string
+  type = string
 }
 
 variable "eksd_masters_lb_url" {
@@ -46,7 +46,7 @@ variable "eksd_certificate" {
 }
 
 variable "is_worker" {
-  type        = bool
+  type = bool
 }
 
 variable "cni_provider" {
@@ -151,4 +151,10 @@ variable "max_size" {
 variable "min_size" {
   type        = number
   description = ""
+}
+
+variable "root_ca_cert" {
+  type        = string
+  default     = ""
+  description = "The root certificate authority certificate of the cluster"
 }
