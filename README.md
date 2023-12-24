@@ -16,5 +16,5 @@ Utilities and blueprints examples for Zadara cloud usage
 * [Cluster Autoscaler](./addons/cluster-autoscaler/README.md)
 * [Kasten K10](./addons/kasten-k10/README.md)
 
-## Kubernetes applications
-* TBD
+## Kubernetes tips & tricks
+* [Resolve the external IP of a public-facing NLB/ALB](./tips/external-ip/README.md)
