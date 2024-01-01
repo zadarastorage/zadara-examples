@@ -28,7 +28,7 @@ elect_leader() {
     instances=$(aws autoscaling describe-auto-scaling-groups --endpoint-url "$api_endpoint/api/v2/aws/autoscaling" --auto-scaling-group-name "${asg_name}" --query 'AutoScalingGroups[*].Instances[?HealthStatus==`Healthy`].InstanceId' --output text)
     sorted_instances=$(aws ec2 describe-instances --endpoint-url "$api_endpoint/api/v2/aws/ec2" --instance-ids $(echo $instances) | jq -r '.Reservations[].Instances[] | "{\"Name\": \"\(.Tags[] | select(.Key == "Name") | .["Name"] = .Value | .Name)\", \"Id\": \"\(.InstanceId)\"}"' | jq -s '.[] | { id: .Id, name: .Name, idx: (.Name | capture("(?<v>[[:digit:].]+)$").v)}' | jq -s -c 'sort_by(.idx)')
     leader_instance=$(echo $sorted_instances | jq -r '.[0].id')
-    [[ -z $leader_instance ]]
+    [[ "$leader_instance" != i*  ]]
   do sleep 5; done
 
   info "Current instance: $instance_id | Leader instance: $leader_instance"
@@ -98,7 +98,7 @@ local_cp_node_wait() {
 
   if [ "${type}" = "server" ]; then
     # Extract the internal API endpoint of the compute cluster (requires version 23.08 and above)
-    api_endpoint=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq -c '.cluster_url' | cut -d\" -f2)
+    api_endpoint=$(curl -s http://169.254.169.254/openstack/latest/meta_data.json | jq -c '.cluster_url' | cut -d\" -f2)
 
     # Initialize the control plane - differentiate between the leader (seeder) and other servers
     identify
