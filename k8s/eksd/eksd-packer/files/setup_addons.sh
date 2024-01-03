@@ -125,6 +125,7 @@ extraVolumes:
   - name: trusted-root-cas
     hostPath:
       path: /etc/ssl/certs/ca-certificates.crt
+      type: File
 extraVolumeMounts:
   - name: trusted-root-cas
     mountPath: /etc/ssl/certs/zadara-ca.crt
@@ -146,6 +147,7 @@ extraVolumes:
   - name: trusted-root-cas
     hostPath:
       path: /etc/ssl/certs/ca-certificates.crt
+      type: File
 extraVolumeMounts:
   - name: cloud-config
     mountPath: config
