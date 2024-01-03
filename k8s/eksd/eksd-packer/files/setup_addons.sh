@@ -83,7 +83,7 @@ controller:
   volumeMounts:
     - name: trusted-root-cas
       mountPath: /etc/ssl/certs/zadara-ca.crt
-      readonly: true
+      readOnly: true
 sidecars:
   provisioner:
     additionalArgs:
@@ -128,7 +128,7 @@ extraVolumes:
 extraVolumeMounts:
   - name: trusted-root-cas
     mountPath: /etc/ssl/certs/zadara-ca.crt
-    readonly: true
+    readOnly: true
 EOF
 
 # Cluster Autoscaler
@@ -151,7 +151,7 @@ extraVolumeMounts:
     mountPath: config
   - name: trusted-root-cas
     mountPath: /etc/ssl/certs/zadara-ca.crt
-    readonly: true
+    readOnly: true
 tolerations:
 - effect: NoSchedule
   key: node-role.kubernetes.io/control-plane
