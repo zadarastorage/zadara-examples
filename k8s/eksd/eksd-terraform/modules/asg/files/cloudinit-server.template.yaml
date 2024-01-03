@@ -22,7 +22,7 @@ write_files:
         - name: trusted-root-cas
           hostPath:
             path: /etc/ssl/certs/ca-certificates.crt
-          type: File
+            type: File
       extraVolumeMounts:
         - name: cloud-config
           mountPath: config
