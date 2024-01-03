@@ -97,6 +97,7 @@ storageClasses:
   - name: ebs-sc
     annotations:
       storageclass.kubernetes.io/is-default-class: "true"
+    allowVolumeExpansion: true
     parameters:
       type: "gp2"
 volumeSnapshotClasses: 
