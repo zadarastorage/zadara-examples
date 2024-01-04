@@ -2,17 +2,17 @@
 
 # info logs the given argument at info log level.
 info() {
-    echo "[INFO] " "$@"
+    echo "[INFO] $(timestamp)" "$@"
 }
 
 # warn logs the given argument at warn log level.
 warn() {
-    echo "[WARN] " "$@" >&2
+    echo "[WARN] $(timestamp)" "$@" >&2
 }
 
 # fatal logs the given argument at fatal log level.
 fatal() {
-    echo "[ERROR] " "$@" >&2
+    echo "[ERROR] $(timestamp)" "$@" >&2
     exit 1
 }
 
@@ -71,23 +71,23 @@ cp_wait() {
 
 local_cp_api_wait() {
   while true; do
-    info "$(timestamp) Waiting for kube-apiserver..."
+    info "Waiting for kube-apiserver..."
     if timeout 1 bash -c "true <>/dev/tcp/localhost/6443" 2>/dev/null; then
         break
     fi
     sleep 5
   done
-  info "$(timestamp) Kubernetes api-server is responding on 6443 (cluster node not neccessarily ready)"
+  info "Kubernetes api-server is responding on 6443 (cluster node not neccessarily ready)"
   wait $!
 }
 
 local_cp_node_wait() {
   nodereadypath='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'
   until kubectl get nodes --selector='node-role.kubernetes.io/control-plane' -o jsonpath="$nodereadypath" | grep -E "Ready=True"; do
-    info "$(timestamp) Waiting for node to be ready..."
+    info "Waiting for node to be ready..."
     sleep 5
   done
-  info "$(timestamp) Kubernetes node is ready - cluster is up & running!"
+  info "Kubernetes node is ready - cluster is up & running!"
 }
 
 
@@ -133,18 +133,23 @@ local_cp_node_wait() {
           sudo sed -i s,VXLANCrossSubnet,IPIP,g /etc/kubernetes/zadara/custom-resources.yaml
           sudo sed -i s,192.168.0.0/16,${pod_network},g /etc/kubernetes/zadara/custom-resources.yaml
           kubectl create -f /etc/kubernetes/zadara/custom-resources.yaml
-          sleep 10  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          sleep 20  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          kubectl wait pod --timeout=60s --for=condition=Ready --namespace calico-system --all
         ;;
         cilium)
           info "Installing CNI: Cilium (experimental)"
           sudo tar xzvfC /etc/kubernetes/zadara/cilium-linux-amd64.tar.gz /usr/local/bin
-          cilium install
-          cilium hubble enable --ui
+          kubectl create namespace cilium-system
+          cilium install --namespace cilium-system
+          cilium hubble enable --ui --namespace cilium-system
+          sleep 20  # allow new cilium artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          kubectl wait pod --timeout=60s --for=condition=Ready --namespace cilium-system --all
         ;;
         *)
           info "Installing CNI: Flannel (default)"
           sudo sed -i s,10.244.0.0/16,${pod_network},g /etc/kubernetes/zadara/kube-flannel.yml
           kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
+          kubectl wait pod --timeout=60s --for=condition=Ready --namespace kube-flannel --all
         ;;
       esac
       info "Installing CCM: AWS Cloud Provider for Kubernetes"
