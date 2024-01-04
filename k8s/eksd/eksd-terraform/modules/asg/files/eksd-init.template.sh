@@ -133,7 +133,7 @@ local_cp_node_wait() {
           sudo sed -i s,VXLANCrossSubnet,IPIP,g /etc/kubernetes/zadara/custom-resources.yaml
           sudo sed -i s,192.168.0.0/16,${pod_network},g /etc/kubernetes/zadara/custom-resources.yaml
           kubectl create -f /etc/kubernetes/zadara/custom-resources.yaml
-          sleep 20  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          sleep 30  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
           kubectl wait pod --timeout=60s --for=condition=Ready --namespace calico-system --all
         ;;
         cilium)
@@ -141,8 +141,8 @@ local_cp_node_wait() {
           sudo tar xzvfC /etc/kubernetes/zadara/cilium-linux-amd64.tar.gz /usr/local/bin
           kubectl create namespace cilium-system
           cilium install --namespace cilium-system
+          sleep 30  # allow new cilium artifacts to d/l - we don't pre-fetch them altought we should (TBD)
           cilium hubble enable --ui --namespace cilium-system
-          sleep 20  # allow new cilium artifacts to d/l - we don't pre-fetch them altought we should (TBD)
           kubectl wait pod --timeout=60s --for=condition=Ready --namespace cilium-system --all
         ;;
         *)
