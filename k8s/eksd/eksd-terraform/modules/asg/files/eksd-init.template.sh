@@ -149,13 +149,14 @@ local_cp_node_wait() {
           info "Installing CNI: Flannel (default)"
           sudo sed -i s,10.244.0.0/16,${pod_network},g /etc/kubernetes/zadara/kube-flannel.yml
           kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
+          sleep 5
           kubectl wait pod --timeout=60s --for=condition=Ready --namespace kube-flannel --all
         ;;
       esac
       info "Installing CCM: AWS Cloud Provider for Kubernetes"
       sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/cloud-config.yaml
       kubectl apply -f /etc/kubernetes/zadara/cloud-config.yaml -n kube-system
-      helm install --namespace kube-system aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
+      helm install --wait --namespace kube-system aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
 
       # Await for cluster nodes to be ready before continuing with additional addons deployments & declare cluster is up & running
       local_cp_node_wait
@@ -176,7 +177,7 @@ local_cp_node_wait() {
       if ${install_kasten_k10}; then
         info "Installing Addon: Kasten K10"
         helm install --create-namespace --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz)
-        sleep 10 # allow ETCD to relax after k10 bombarding it with requests before continuing - to avoid timeouts...
+        sleep 30 # allow ETCD to relax after k10 bombarding it with requests before continuing - to avoid timeouts...
       fi
       if ${install_lb_controller}; then
         sleep 5  # allow existing helm-level installations to start as loadbalancer resource change may affect them
