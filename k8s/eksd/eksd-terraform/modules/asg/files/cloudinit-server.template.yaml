@@ -32,6 +32,10 @@ write_files:
     owner: root:root
     permissions: "0644"
     content: "0 */1 * * * root kubeadm init phase upload-certs --upload-certs --certificate-key ${ certificate } \n"
+  - path: /etc/cron.d/eksd-backup-etcd
+    owner: root:root
+    permissions: "0644"
+    content: "0 0 * * * root ETCDCTL_API=3 etcdctl --endpoints=https://localhost:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --key=/etc/kubernetes/pki/etcd/peer.key --cert=/etc/kubernetes/pki/etcd/peer.crt snapshot save /etc/kubernetes/zadara/etcd_backup.db \n"
   - path: /etc/kubernetes/zadara/kubeadm-config.yaml
     owner: root:root
     permissions: "0644"
@@ -55,6 +59,8 @@ write_files:
           imageRepository: "public.ecr.aws/eks-distro/etcd-io"
           imageTag: "ETCD_VER"
           dataDir: "/var/lib/etcd"
+          extraArgs:
+            max-snapshots: "60"
       dns:
         imageRepository: "public.ecr.aws/eks-distro/coredns"
         imageTag: "DNS_VER"
