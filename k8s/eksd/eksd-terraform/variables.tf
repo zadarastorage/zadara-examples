@@ -208,6 +208,38 @@ variable "install_kasten_k10" {
   description = "Addon: Kasten K10"
 }
 
+variable "backup_access_key_id" {
+  type        = string
+  sensitive   = true
+  description = "ETCD backup remote export credentials to NGOS/S3"
+  default     = ""
+}
+
+variable "backup_secret_access_key" {
+  type        = string
+  sensitive   = true
+  description = "ETCD backup remote export credentials to NGOS/S3"
+  default     = ""
+}
+
+variable "backup_region" {
+  type        = string
+  description = "ETCD backup remote export NGOS/S3 region (defaulting to us-east-1)"
+  default     = "us-east-1"
+}
+
+variable "backup_endpoint" {
+  type        = string
+  description = "ETCD backup remote export NGOS/S3 endpoint (not required for AWS S3)"
+  default     = ""
+}
+
+variable "backup_bucket" {
+  type        = string
+  description = "ETCD backup remote export NGOS/S3 bucket"
+  default     = ""
+}
+
 variable "root_ca_cert_path" {
   type        = string
   default     = ""

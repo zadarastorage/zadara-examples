@@ -4,7 +4,7 @@ set -e
 
 # Validate the number of arguments
 if [ $# -ne 6 ]; then
-    echo "Error: This script expects 6 arguments"
+    echo "ERROR: This script expects 6 arguments"
     echo "Usage: $0 bastion_ip loadbalancer_dns access_key secret_key bastion_user bastion_key"
     exit 1
 fi

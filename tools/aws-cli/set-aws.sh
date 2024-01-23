@@ -7,7 +7,7 @@
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
 then 
-    echo "Error: direct script invocation (so env vars will not apply) - use source instead, for example: source $0 <zCompute API endpoint>"
+    echo "ERROR: direct script invocation (so env vars will not apply) - use source instead, for example: source $0 <zCompute API endpoint>"
     exit 1
 fi
 

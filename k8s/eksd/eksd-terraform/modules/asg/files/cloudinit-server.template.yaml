@@ -28,6 +28,71 @@ write_files:
           mountPath: config
         - name: trusted-root-cas
           mountPath: /etc/ssl/certs/zadara-ca.crt
+  - path: /etc/kubernetes/zadara/etcd-backup.sh
+    owner: root:root
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+
+      echo "ETCD backup - started"
+
+      BACKUP_ROTATION=50 # multi-masters parallelism will likely make it a bit lower
+
+      shopt -s expand_aliases
+      alias kubectl="kubectl --kubeconfig=/etc/kubernetes/admin.conf --namespace kube-system"
+
+      secret=$(kubectl get secret export-backup -o name)
+      if [ -n "$secret" ]; then
+          export AWS_ACCESS_KEY_ID="$(kubectl get secret export-backup -o jsonpath='{.data.backup_access_key_id}' | base64 -d)"
+          export AWS_SECRET_ACCESS_KEY="$(kubectl get secret export-backup -o jsonpath='{.data.backup_secret_access_key}' | base64 -d)"
+          export AWS_REGION="$(kubectl get secret export-backup -o jsonpath='{.data.backup_region}' | base64 -d)"
+          export AWS_ENDPOINT_URL="$(kubectl get secret export-backup -o jsonpath='{.data.backup_endpoint}' | base64 -d)"
+          BUCKET="$(kubectl get secret export-backup -o jsonpath='{.data.backup_bucket}' | base64 -d)"
+      else
+          export AWS_ACCESS_KEY_ID="${ backup_access_key_id }"
+          export AWS_SECRET_ACCESS_KEY="${ backup_secret_access_key }"
+          export AWS_REGION="${ backup_region }"
+          export AWS_ENDPOINT_URL="${ backup_endpoint }"
+          BUCKET="${ backup_bucket }"
+      fi
+
+      if [ -z "$(echo $AWS_ENDPOINT_URL)" ]; then
+          unset AWS_ENDPOINT_URL  #real AWS S3 will not use endpoint
+      fi
+
+      host_name="$(hostname)"
+      host_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+      cluster_name="${ cluster_name }"
+      cluster_id="${ certificate }" # the only "real" unique cluster identifier
+      local_filename='etcd_backup_'$host_name'_'$host_id'.db'
+
+      echo "ETCD backup - saving locally to /etc/kubernetes/zadara/$local_filename"
+      ETCDCTL_API=3 etcdctl \
+          --endpoints=https://localhost:2379 \
+          --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+          --key=/etc/kubernetes/pki/etcd/peer.key \
+          --cert=/etc/kubernetes/pki/etcd/peer.crt \
+          snapshot save "/etc/kubernetes/zadara/$local_filename"
+
+      if [[ -z "$(echo $AWS_ACCESS_KEY_ID)" || -z "$(echo $AWS_SECRET_ACCESS_KEY)" || -z "$(echo $AWS_REGION)" || -z "$BUCKET" ]]; then
+          echo "ETCD backup - skipping export due to missing S3 information (credentials/region/bucket)"
+          exit 0
+      fi
+      timestamp=$(date +%y-%m-%d_%H-%M-%S)
+      remote_filename="$timestamp"_"$local_filename"
+      remote_prefix="$cluster_name"_"$cluster_id"
+
+      echo ETCD backup - exporting to $BUCKET/$remote_prefix/$remote_filename
+      aws s3 cp /etc/kubernetes/zadara/$local_filename s3://$BUCKET/$remote_prefix/$remote_filename
+
+      while [ $(aws s3 ls --recursive s3://$BUCKET/$remote_prefix/ | wc -l) -gt $BACKUP_ROTATION ]
+      do
+          oldest=$(aws s3api list-objects-v2 --bucket $BUCKET --prefix $remote_prefix --query 'sort_by(Contents, &LastModified)[0].Key' | cut -d\" -f2)
+          echo ETCD backup - attempting to purge $BUCKET/$remote_prefix/$oldest
+          aws s3 rm s3://$BUCKET/$oldest
+      done
+
+      echo "ETCD backup - finished"
   - path: /etc/cron.d/eksd-reload-certs
     owner: root:root
     permissions: "0644"
@@ -35,7 +100,7 @@ write_files:
   - path: /etc/cron.d/eksd-backup-etcd
     owner: root:root
     permissions: "0644"
-    content: "0 0 * * * root ETCDCTL_API=3 etcdctl --endpoints=https://localhost:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --key=/etc/kubernetes/pki/etcd/peer.key --cert=/etc/kubernetes/pki/etcd/peer.crt snapshot save /etc/kubernetes/zadara/etcd_backup.db \n"
+    content: "0 */3 * * * root /etc/kubernetes/zadara/etcd-backup.sh \n"
   - path: /etc/kubernetes/zadara/kubeadm-config.yaml
     owner: root:root
     permissions: "0644"

@@ -41,6 +41,7 @@ For a simplified/demo experience, you can use this option to streamline a cluste
 * Optional - create a non-default deployment
     * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values in the respected `variables.tf` files, or set an environment variable `TF_VAR_<variable name>=<value>` before your run
     * For example, you can set the `ebs_csi_volume_type` variable in the eksd-terraform project to something other than 'gp2' per your storage preferences
+    * IMPORTANT - for production use-cases, Zadara recommends revising all non-default properties mentioned in the sections below - for example setting 3 master nodes (using `masters_count`) for control-plane high-availability, setting the external backup properties (like `backup_bucket`) for control-plane [DR capabilities](../../tips/dr/README.md), etc.
 * Run `apply-all.sh <access_key> <secret_key>` with your access_key & secret_key as the parameters (or set the AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables before running the script without specifying parameters)
     * The script will take about 10 minutes for a successful minimal deployment of a single master & worker
     * The script can be rerun for re-apply Terraform changes (for example as part of an upgrade procedure)
@@ -108,6 +109,11 @@ For a simplified/demo experience, you can use this option to streamline a cluste
         * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon (defaulting to true)
         * `install_autoscaler` - whether to deploy the Cluster Autoscaler addon (defaulting to true)
         * `install_kasten_k10` - whether to deploy the Kasten K10 addon (defaulting to false)
+        * `backup_access_key_id` - populate with an external NGOS/S3 credentials for ETCD backup export
+        * `backup_secret_access_key` - populate with an external NGOS/S3 credentials for ETCD backup export
+        * `backup_region` - populate with an external NGOS/S3 region for ETCD backup export (defaulting to us-east-1)
+        * `backup_endpoint` - populate with an external NGOS endpoint for ETCD backup export (not needed for AWS S3)
+        * `backup_bucket` - populate with an external NGOS/S3 bucket for ETCD backup export
 * `terraform init` - this will initialize Terraform for the environment
 * `terraform plan` - this will output the changes that Terraform will actually do (resource creation), for example:
     * EKS-D master nodes ASG + Launch Configuration
@@ -160,6 +166,22 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
     * The export profile is not set OOTB - you will need to configure it in case you want to export the backups outside of zCompute
     * Keep in mind that k10 is only free up to 5 worker nodes - please consult Kasten's [pricing](https://www.kasten.io/pricing) for anything above that
     * For self-installation, use the dedicated [instructions](../../addons/kasten-k10/README.md)
+
+## Optional: Post-deployment DR configuration
+Unless configured as part of the eksd-terraform variables, the EKS-D cluster's internal ETCD datastore will only save the latest backup locally within each master node. 
+
+Alternatively, users may configure the Kubernetes secret below in order to dynamically enable/disable backup exports to NGOS/S3 in order to enhance the cluster's [DR capabilities](../../tips/dr/README.md) in case of a control-plane meltdown:
+```shell
+kubectl create secret --namespace kube-system generic export-backup \
+    --from-literal=backup_access_key_id="<access_key>" \
+    --from-literal=backup_secret_access_key="<secret_key>" \
+    --from-literal=backup_region="<region>" \
+    --from-literal=backup_endpoint="<endpoint>" \
+    --from-literal=backup_bucket="<bucket>"
+```
+Once set, the periodical ETCD backup procedure within each master node will also export the latest backup into the relevant NGOS/S3 location. 
+
+Please note such configuration will override the pre-defined terraform variables-based exteral backup configuration. 
 
 ## Optional: Make your own EKS-D image (Packer)
 Only relevant if you wish to bake your own EKS-D image

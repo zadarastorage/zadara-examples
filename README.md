@@ -18,3 +18,4 @@ Utilities and blueprints examples for Zadara cloud usage
 
 ## Kubernetes tips & tricks
 * [Resolve the external IP of a public-facing NLB/ALB](./tips/external-ip/README.md)
+* [Restoring EKS-D after a control-plane meltdown](./tips/dr/README.md)
