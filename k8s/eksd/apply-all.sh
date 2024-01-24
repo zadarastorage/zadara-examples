@@ -23,7 +23,7 @@ if test -f infra.tfvars; then
     rm infra.tfvars
 fi
 if [[ "$TF_VAR_backup_access_key_id"=="" || "$TF_VAR_backup_secret_access_key"=="" || "$TF_VAR_backup_bucket"=="" ]]; then
-    echo "WARN: No environment variables found for setting up extrnal ETCD backup (TF_VAR_backup_bucket, etc.) - unless added to the eksd-terraform project variable file or via export-backup secret then this cluster might not be restorable in case of a control-plane failure"
+    echo "WARN: No environment variables found for setting up extrnal ETCD backup (TF_VAR_backup_bucket, etc.) - unless added to the eksd-terraform project variable file or via zadara-backup-export secret then this cluster might not be restorable in case of a control-plane failure"
 fi
 
 # Step 1 - infrastructure automation

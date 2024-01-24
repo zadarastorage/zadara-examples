@@ -240,6 +240,12 @@ variable "backup_bucket" {
   default     = ""
 }
 
+variable "backup_rotation" {
+  type        = number
+  description = "ETCD backup remote export rotation (max number of backup files to retain)"
+  default     = 100
+}
+
 variable "root_ca_cert_path" {
   type        = string
   default     = ""

@@ -109,11 +109,12 @@ For a simplified/demo experience, you can use this option to streamline a cluste
         * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon (defaulting to true)
         * `install_autoscaler` - whether to deploy the Cluster Autoscaler addon (defaulting to true)
         * `install_kasten_k10` - whether to deploy the Kasten K10 addon (defaulting to false)
-        * `backup_access_key_id` - populate with an external NGOS/S3 credentials for ETCD backup export
-        * `backup_secret_access_key` - populate with an external NGOS/S3 credentials for ETCD backup export
-        * `backup_region` - populate with an external NGOS/S3 region for ETCD backup export (defaulting to us-east-1)
-        * `backup_endpoint` - populate with an external NGOS endpoint for ETCD backup export (not needed for AWS S3)
-        * `backup_bucket` - populate with an external NGOS/S3 bucket for ETCD backup export
+        * `backup_access_key_id` - external NGOS/S3 user access-key for ETCD backup export
+        * `backup_secret_access_key` - external NGOS/S3 user secret-key for ETCD backup export
+        * `backup_region` - external NGOS/S3 region for ETCD backup export (defaulting to us-east-1)
+        * `backup_endpoint` - external NGOS endpoint for ETCD backup export (not needed for AWS S3)
+        * `backup_bucket` - external NGOS/S3 bucket name for ETCD backup export
+        * `backup_rotation` - maximal number of remote backup files to retain (defaulting to 100)
 * `terraform init` - this will initialize Terraform for the environment
 * `terraform plan` - this will output the changes that Terraform will actually do (resource creation), for example:
     * EKS-D master nodes ASG + Launch Configuration
@@ -168,16 +169,17 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
     * For self-installation, use the dedicated [instructions](../../addons/kasten-k10/README.md)
 
 ## Optional: Post-deployment DR configuration
-Unless configured as part of the eksd-terraform variables, the EKS-D cluster's internal ETCD datastore will only save the latest backup locally within each master node. 
+Unless configured as part of the eksd-terraform variables, the EKS-D cluster's internal ETCD datastore automated backup procedure (running every 2 hours) will only save the latest backup locally within each master node. 
 
 Alternatively, users may configure the Kubernetes secret below in order to dynamically enable/disable backup exports to NGOS/S3 in order to enhance the cluster's [DR capabilities](../../tips/dr/README.md) in case of a control-plane meltdown:
 ```shell
-kubectl create secret --namespace kube-system generic export-backup \
-    --from-literal=backup_access_key_id="<access_key>" \
-    --from-literal=backup_secret_access_key="<secret_key>" \
-    --from-literal=backup_region="<region>" \
-    --from-literal=backup_endpoint="<endpoint>" \
-    --from-literal=backup_bucket="<bucket>"
+kubectl create secret generic zadara-backup-export \
+    --namespace kube-system \
+    --from-literal=backup_access_key_id="<access key>" \
+    --from-literal=backup_secret_access_key="<secret key>" \
+    --from-literal=backup_region="<bucket region>" \
+    --from-literal=backup_endpoint="<NGOS endpoint (not relevant for S3)>" \
+    --from-literal=backup_bucket="<bucket name>"
 ```
 Once set, the periodical ETCD backup procedure within each master node will also export the latest backup into the relevant NGOS/S3 location. 
 

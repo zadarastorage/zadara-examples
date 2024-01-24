@@ -114,6 +114,7 @@ module "masters_asg" {
   backup_region            = var.backup_region
   backup_endpoint          = var.backup_endpoint
   backup_bucket            = var.backup_bucket
+  backup_rotation          = var.backup_rotation
 
   max_size     = var.masters_count + var.masters_addition
   min_size     = var.masters_count

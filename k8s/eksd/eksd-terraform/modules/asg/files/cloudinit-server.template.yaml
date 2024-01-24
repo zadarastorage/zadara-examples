@@ -36,18 +36,18 @@ write_files:
 
       echo "ETCD backup - started"
 
-      BACKUP_ROTATION=50 # multi-masters parallelism will likely make it a bit lower
+      BACKUP_ROTATION=${ backup_rotation } # multi-masters parallelism will likely make it a bit lower
 
       shopt -s expand_aliases
       alias kubectl="kubectl --kubeconfig=/etc/kubernetes/admin.conf --namespace kube-system"
 
-      secret=$(kubectl get secret export-backup -o name)
+      secret=$(kubectl get secret zadara-backup-export -o name)
       if [ -n "$secret" ]; then
-          export AWS_ACCESS_KEY_ID="$(kubectl get secret export-backup -o jsonpath='{.data.backup_access_key_id}' | base64 -d)"
-          export AWS_SECRET_ACCESS_KEY="$(kubectl get secret export-backup -o jsonpath='{.data.backup_secret_access_key}' | base64 -d)"
-          export AWS_REGION="$(kubectl get secret export-backup -o jsonpath='{.data.backup_region}' | base64 -d)"
-          export AWS_ENDPOINT_URL="$(kubectl get secret export-backup -o jsonpath='{.data.backup_endpoint}' | base64 -d)"
-          BUCKET="$(kubectl get secret export-backup -o jsonpath='{.data.backup_bucket}' | base64 -d)"
+          export AWS_ACCESS_KEY_ID="$(kubectl get secret zadara-backup-export -o jsonpath='{.data.backup_access_key_id}' | base64 -d)"
+          export AWS_SECRET_ACCESS_KEY="$(kubectl get secret zadara-backup-export -o jsonpath='{.data.backup_secret_access_key}' | base64 -d)"
+          export AWS_REGION="$(kubectl get secret zadara-backup-export -o jsonpath='{.data.backup_region}' | base64 -d)"
+          export AWS_ENDPOINT_URL="$(kubectl get secret zadara-backup-export -o jsonpath='{.data.backup_endpoint}' | base64 -d)"
+          BUCKET="$(kubectl get secret zadara-backup-export -o jsonpath='{.data.backup_bucket}' | base64 -d)"
       else
           export AWS_ACCESS_KEY_ID="${ backup_access_key_id }"
           export AWS_SECRET_ACCESS_KEY="${ backup_secret_access_key }"
@@ -100,7 +100,7 @@ write_files:
   - path: /etc/cron.d/eksd-backup-etcd
     owner: root:root
     permissions: "0644"
-    content: "0 */3 * * * root /etc/kubernetes/zadara/etcd-backup.sh \n"
+    content: "0 */2 * * * root /etc/kubernetes/zadara/etcd-backup.sh \n"
   - path: /etc/kubernetes/zadara/kubeadm-config.yaml
     owner: root:root
     permissions: "0644"

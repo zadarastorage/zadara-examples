@@ -19,6 +19,7 @@ data "cloudinit_config" "this" {
       backup_region            = var.backup_region
       backup_endpoint          = var.backup_endpoint
       backup_bucket            = var.backup_bucket
+      backup_rotation          = var.backup_rotation
     })
   }
 
