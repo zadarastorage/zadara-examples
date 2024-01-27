@@ -7,20 +7,23 @@ access_key=$1
 secret_key=$2
 
 if [ $# -lt 2 ]; then
-    echo "Warn: Did not receive access & secret keys as arguments, trying with environments variables AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY"
+    echo "WARN: Did not receive access & secret keys as arguments, trying with environments variables AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY"
     access_key=$AWS_ACCESS_KEY_ID
     secret_key=$AWS_SECRET_ACCESS_KEY
     if [ ${#access_key} -lt 1 ] || [ ${#secret_key} -lt 1 ]; then
-        echo "Error: Did not find AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables - exiting with error as no credentials found"
+        echo "ERROR: Did not find AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables - exiting with error as no credentials found"
         exit 1
     fi
-    echo "Info: Running without arguments - using AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables"
+    echo "INFO: Running without arguments - using AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables"
 fi
 
-# Step 0 - very basic check for leftovers...
+# Step 0 - very basic check for potential issues...
 if test -f infra.tfvars; then
-    echo "Warn: Previous infra.tfvars file found - removing and re-applying all (otherwise please run destroy-all.sh before running apply-all.sh)"
+    echo "WARN: Previous infra.tfvars file found - removing and re-applying all (otherwise please run destroy-all.sh before running apply-all.sh)"
     rm infra.tfvars
+fi
+if [[ "$TF_VAR_backup_access_key_id"=="" || "$TF_VAR_backup_secret_access_key"=="" || "$TF_VAR_backup_bucket"=="" ]]; then
+    echo "WARN: No environment variables found for setting up extrnal ETCD backup (TF_VAR_backup_bucket, etc.) - unless added to the eksd-terraform project variable file or via zadara-backup-export secret then this cluster might not be restorable in case of a control-plane failure"
 fi
 
 # Step 1 - infrastructure automation

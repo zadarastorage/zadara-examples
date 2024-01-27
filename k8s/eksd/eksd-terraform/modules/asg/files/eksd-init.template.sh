@@ -2,17 +2,17 @@
 
 # info logs the given argument at info log level.
 info() {
-    echo "[INFO] " "$@"
+    echo "[INFO] $(timestamp)" "$@"
 }
 
 # warn logs the given argument at warn log level.
 warn() {
-    echo "[WARN] " "$@" >&2
+    echo "[WARN] $(timestamp)" "$@" >&2
 }
 
 # fatal logs the given argument at fatal log level.
 fatal() {
-    echo "[ERROR] " "$@" >&2
+    echo "[ERROR] $(timestamp)" "$@" >&2
     exit 1
 }
 
@@ -24,9 +24,12 @@ timestamp() {
 elect_leader() {
   # Fetch other running instances in ASG
   instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-  instances=$(aws autoscaling describe-auto-scaling-groups --endpoint-url "$api_endpoint/api/v2/aws/autoscaling" --auto-scaling-group-name "${asg_name}" --query 'AutoScalingGroups[*].Instances[?HealthStatus==`Healthy`].InstanceId' --output text)
-  sorted_instances=$(aws ec2 describe-instances --endpoint-url "$api_endpoint/api/v2/aws/ec2" --instance-ids $(echo $instances) | jq -r '.Reservations[].Instances[] | "{\"Name\": \"\(.Tags[] | select(.Key == "Name") | .["Name"] = .Value | .Name)\", \"Id\": \"\(.InstanceId)\"}"' | jq -s '.[] | { id: .Id, name: .Name, idx: (.Name | capture("(?<v>[[:digit:].]+)$").v)}' | jq -s -c 'sort_by(.idx)')
-  leader_instance=$(echo $sorted_instances | jq -r '.[0].id')
+  while
+    instances=$(aws autoscaling describe-auto-scaling-groups --endpoint-url "$api_endpoint/api/v2/aws/autoscaling" --auto-scaling-group-name "${asg_name}" --query 'AutoScalingGroups[*].Instances[?HealthStatus==`Healthy`].InstanceId' --output text)
+    sorted_instances=$(aws ec2 describe-instances --endpoint-url "$api_endpoint/api/v2/aws/ec2" --instance-ids $(echo $instances) | jq -r '.Reservations[].Instances[] | "{\"Name\": \"\(.Tags[] | select(.Key == "Name") | .["Name"] = .Value | .Name)\", \"Id\": \"\(.InstanceId)\"}"' | jq -s '.[] | { id: .Id, name: .Name, idx: (.Name | capture("(?<v>[[:digit:].]+)$").v)}' | jq -s -c 'sort_by(.idx)')
+    leader_instance=$(echo $sorted_instances | jq -r '.[0].id')
+    [[ "$leader_instance" != i*  ]]
+  do sleep 5; done
 
   info "Current instance: $instance_id | Leader instance: $leader_instance"
 
@@ -68,23 +71,23 @@ cp_wait() {
 
 local_cp_api_wait() {
   while true; do
-    info "$(timestamp) Waiting for kube-apiserver..."
+    info "Waiting for kube-apiserver..."
     if timeout 1 bash -c "true <>/dev/tcp/localhost/6443" 2>/dev/null; then
         break
     fi
     sleep 5
   done
-  info "$(timestamp) Kubernetes api-server is responding on 6443 (cluster node not neccessarily ready)"
+  info "Kubernetes api-server is responding on 6443 (cluster node not neccessarily ready)"
   wait $!
 }
 
 local_cp_node_wait() {
   nodereadypath='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'
   until kubectl get nodes --selector='node-role.kubernetes.io/control-plane' -o jsonpath="$nodereadypath" | grep -E "Ready=True"; do
-    info "$(timestamp) Waiting for node to be ready..."
+    info "Waiting for node to be ready..."
     sleep 5
   done
-  info "$(timestamp) Kubernetes node is ready - cluster is up & running!"
+  info "Kubernetes node is ready - cluster is up & running!"
 }
 
 
@@ -95,7 +98,7 @@ local_cp_node_wait() {
 
   if [ "${type}" = "server" ]; then
     # Extract the internal API endpoint of the compute cluster (requires version 23.08 and above)
-    api_endpoint=$(curl http://169.254.169.254/openstack/latest/meta_data.json | jq -c '.cluster_url' | cut -d\" -f2)
+    api_endpoint=$(curl -s http://169.254.169.254/openstack/latest/meta_data.json | jq -c '.cluster_url' | cut -d\" -f2)
 
     # Initialize the control plane - differentiate between the leader (seeder) and other servers
     identify
@@ -130,24 +133,30 @@ local_cp_node_wait() {
           sudo sed -i s,VXLANCrossSubnet,IPIP,g /etc/kubernetes/zadara/custom-resources.yaml
           sudo sed -i s,192.168.0.0/16,${pod_network},g /etc/kubernetes/zadara/custom-resources.yaml
           kubectl create -f /etc/kubernetes/zadara/custom-resources.yaml
-          sleep 10  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          sleep 30  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          kubectl wait pod --timeout=60s --for=condition=Ready --namespace calico-system --all
         ;;
         cilium)
           info "Installing CNI: Cilium (experimental)"
           sudo tar xzvfC /etc/kubernetes/zadara/cilium-linux-amd64.tar.gz /usr/local/bin
-          cilium install
-          cilium hubble enable --ui
+          kubectl create namespace cilium-system
+          cilium install --namespace cilium-system
+          sleep 30  # allow new cilium artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          cilium hubble enable --ui --namespace cilium-system
+          kubectl wait pod --timeout=60s --for=condition=Ready --namespace cilium-system --all
         ;;
         *)
           info "Installing CNI: Flannel (default)"
           sudo sed -i s,10.244.0.0/16,${pod_network},g /etc/kubernetes/zadara/kube-flannel.yml
           kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
+          sleep 5
+          kubectl wait pod --timeout=60s --for=condition=Ready --namespace kube-flannel --all
         ;;
       esac
       info "Installing CCM: AWS Cloud Provider for Kubernetes"
       sudo sed -i s,API_ENDPOINT,$api_endpoint, /etc/kubernetes/zadara/cloud-config.yaml
       kubectl apply -f /etc/kubernetes/zadara/cloud-config.yaml -n kube-system
-      helm install --namespace kube-system aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
+      helm install --wait --namespace kube-system aws-cloud-controller-manager $(ls /etc/kubernetes/zadara/aws-cloud-controller-manager-*.tgz) -f /etc/kubernetes/zadara/values-aws-cloud-controller.yaml
 
       # Await for cluster nodes to be ready before continuing with additional addons deployments & declare cluster is up & running
       local_cp_node_wait
@@ -168,9 +177,10 @@ local_cp_node_wait() {
       if ${install_kasten_k10}; then
         info "Installing Addon: Kasten K10"
         helm install --create-namespace --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz)
+        sleep 30 # allow ETCD to relax after k10 bombarding it with requests before continuing - to avoid timeouts...
       fi
       if ${install_lb_controller}; then
-        sleep 2  # allow existing helm-level installations to finish as loadbalancer resource change may affect them
+        sleep 5  # allow existing helm-level installations to start as loadbalancer resource change may affect them
         info "Installing Addon: AWS Load Balancer Controller"
         sudo sed -i s,CLUSTER_NAME,${cluster_name}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
         sudo sed -i s,VPC_ID,${vpc_id}, /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml

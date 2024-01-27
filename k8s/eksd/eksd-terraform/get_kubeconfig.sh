@@ -2,7 +2,7 @@
 
 # Validate the number of arguments
 if [ $# -ne 8 ]; then
-    echo "Error: This script expects 8 arguments"
+    echo "ERROR: This script expects 8 arguments"
     echo "Usage: $0 master_hostname apiserver_private apiserver_public bastion_ip bastion_user bastion_keypair master_user master_keypair"
     exit 1
 fi
@@ -38,7 +38,7 @@ done
 scp -i $bastion_keypair -o StrictHostKeyChecking=no $bastion_user@$bastion_ip:~/kubeconfig ./kubeconfig.temp
 if [[ $? -ne 0 ]];
 then
-    echo "Error: Cloudn't obtain the kubeconfig - check the bastion, ssh into the master node, run journalctl and look for kubeadm init errors)"
+    echo "ERROR: Cloudn't obtain the kubeconfig - check the bastion, ssh into the master node, run journalctl and look for kubeadm init errors)"
     exit 1
 fi
 

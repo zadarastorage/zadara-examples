@@ -1,6 +1,7 @@
 resource "aws_iam_instance_profile" "profile" {
   role = var.iam_role_name
   name = var.name
+  depends_on = [aws_iam_policy_attachment.test-attach]
 }
 
 resource "aws_iam_role" "role" {
