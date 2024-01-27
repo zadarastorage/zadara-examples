@@ -63,7 +63,8 @@ write_files:
       host_name="$(hostname)"
       host_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
       cluster_name="${ cluster_name }"
-      cluster_id="${ certificate }" # the only "real" unique cluster identifier
+      cluster_certificate="${ certificate }" # the only "real" unique cluster identifier
+      cluster_id=$${cluster_certificate:0:7}
       local_filename='etcd_backup_'$host_name'_'$host_id'.db'
 
       echo "ETCD backup - saving locally to /etc/kubernetes/zadara/$local_filename"

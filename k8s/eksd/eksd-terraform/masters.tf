@@ -65,7 +65,7 @@ resource "random_password" "random_cluster_token_secret" {
 }
 
 resource "random_password" "random_cluster_certificate" {
-  length  = 32
+  length  = 64
   special = false
   lower   = false
   upper   = false

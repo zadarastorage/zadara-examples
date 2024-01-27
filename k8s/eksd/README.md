@@ -2,12 +2,15 @@
 Below is an example (not OOTB production-grade solution) for an EKS-D automated deployment over zCompute - facilitating cloud integration with dynamic ASG scaling, instance labeling & lifecycle, native load balancing, built-in storage capabilities and optional Kasten K10 as a backup & restore solution. 
 
 ## Known limitations
-* zCompute minimal version is **23.08** (previous versions will not support the EKS-D initialization phase which is implemented in Step #2) in VSC-mode
-* EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
+* zCompute minimal version is **23.08** running in VSC-mode
 * Upgraded zCompute clouds must have at least one AWS-compatible VolumeType API Alias (io1 / io2 / gp2 / gp3 / sc1 / st1 / standard / sbp1 / sbg1) to be available for provisioning (fresh 23.08 installations have them OOTB)
-* EKS-D cluster name (set by the `environment` variable as mentioned below) must be unique for the account
-* The deployment will create a bastion VM with port 22 (SSH) exposed to the world (and EKS-D nodes with port 22 exposed to the bastion) - you may want to limit the exposure, stop or even terminate the bastion VM post-deployment
-* The Cluster Autoscaler might also scale-down the control-plane ASG, so make sure to use min=max=desired for the ASG capacity (default is 1)
+* The EKS-D cluster name (set by the `environment` variable as mentioned below) must be unique for the account
+* The Cluster Autoscaler might also scale-down the control-plane ASG which may affect the ETCD quorom and even brick the cluster, so make sure to use min=max=desired for the masters ASG capacity (default is 1=1=1)
+
+## Security concerns
+* The pre-baked EKS-D image modifies the default Ubuntu [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html) sandboxing permissions by allowing API calls to be made upon new volume attachment (required for the EBS CSI operation)
+* The deployment will create and use a bastion VM with port 22 (SSH) exposed to the world (and EKS-D nodes with port 22 exposed to the bastion) - you may want to limit this exposure, stop or even terminate the bastion VM post-deployment
+* The deployment will create a public-facing NLB for the control-plane api-server, exposing Kubernetes to the world - you may want to limit this exposure to private networks per the documentation below
 
 ## Prerequisites: zCompute
 * Storage:
