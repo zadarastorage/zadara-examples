@@ -122,26 +122,37 @@ local_cp_node_wait() {
       
       # Await for cluster to be responding before completing the setup
       local_cp_api_wait
+
+      # Use the right admin user (1.29+ have super-admin)
+      if test -f /etc/kubernetes/super-admin.conf; then
+        export KUBECONFIG=/etc/kubernetes/super-admin.conf
+        cp /etc/kubernetes/super-admin.conf /etc/kubernetes/zadara/kubeconfig
+      else
+        export KUBECONFIG=/etc/kubernetes/admin.conf
+        cp /etc/kubernetes/admin.conf /etc/kubernetes/zadara/kubeconfig
+      fi
  
       # Run post-init operations/deployments (CNI & CCM)
-      export KUBECONFIG=/etc/kubernetes/admin.conf
       case ${cni_provider} in
         calico)
           info "Installing CNI: Calico (may require further configuration)"
           kubectl create -f /etc/kubernetes/zadara/tigera-operator.yaml
+          sleep 10
+          kubectl wait pod --timeout=90s --for=condition=Ready --namespace tigera-operator --all
           sudo sed -i '/^  calicoNetwork:/a \ \ \ \ bgp: Enabled' /etc/kubernetes/zadara/custom-resources.yaml
           sudo sed -i s,VXLANCrossSubnet,IPIP,g /etc/kubernetes/zadara/custom-resources.yaml
           sudo sed -i s,192.168.0.0/16,${pod_network},g /etc/kubernetes/zadara/custom-resources.yaml
           kubectl create -f /etc/kubernetes/zadara/custom-resources.yaml
-          sleep 30  # allow new calico artifacts to d/l - we don't pre-fetch them altought we should (TBD)
-          kubectl wait pod --timeout=60s --for=condition=Ready --namespace calico-system --all
+          sleep 90  # allow new calico artifacts to d/l (we don't pre-fetch them)
+          kubectl wait pod --timeout=90s --for=condition=Ready --namespace calico-system --all
+          kubectl wait pod --timeout=30s --for=condition=Ready --namespace calico-apiserver --all
         ;;
         cilium)
           info "Installing CNI: Cilium (experimental)"
           sudo tar xzvfC /etc/kubernetes/zadara/cilium-linux-amd64.tar.gz /usr/local/bin
           kubectl create namespace cilium-system
           cilium install --namespace cilium-system
-          sleep 30  # allow new cilium artifacts to d/l - we don't pre-fetch them altought we should (TBD)
+          sleep 30  # allow new cilium artifacts to d/l (we don't pre-fetch them)
           cilium hubble enable --ui --namespace cilium-system
           kubectl wait pod --timeout=60s --for=condition=Ready --namespace cilium-system --all
         ;;
@@ -149,7 +160,7 @@ local_cp_node_wait() {
           info "Installing CNI: Flannel (default)"
           sudo sed -i s,10.244.0.0/16,${pod_network},g /etc/kubernetes/zadara/kube-flannel.yml
           kubectl apply -f /etc/kubernetes/zadara/kube-flannel.yml
-          sleep 5
+          sleep 10
           kubectl wait pod --timeout=60s --for=condition=Ready --namespace kube-flannel --all
         ;;
       esac
@@ -160,7 +171,7 @@ local_cp_node_wait() {
 
       # Await for cluster nodes to be ready before continuing with additional addons deployments & declare cluster is up & running
       local_cp_node_wait
-      sudo chmod 644 /etc/kubernetes/admin.conf
+      sudo chmod 644 /etc/kubernetes/zadara/kubeconfig
       if ${install_ebs_csi}; then
         info "Installing Addon: EBS CSI driver"
         sudo sed -i s,gp2,${ebs_csi_volume_type}, /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
