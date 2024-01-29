@@ -12,10 +12,10 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
 * The deployment will create and use a bastion VM with port 22 (SSH) exposed to the world (and EKS-D nodes with port 22 exposed to the bastion) - you may want to limit this exposure, stop or even terminate the bastion VM post-deployment
 * The deployment will create a public-facing NLB for the control-plane api-server, exposing Kubernetes to the world - you may want to limit this exposure to private networks per the documentation below
 
-## Prerequisites: zCompute
+## zCompute prerequisites
 * Storage:
-    * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command (via the Zadara toolbox VM or the symp-cli [container](https://hub.docker.com/r/stratoscale/symp-cli)) using your zCompute account (domain) and credentials: \
-    `volume volume-types list -c name -c alias -c operational_state -c health -m grep=ProvisioningEnabled` \
+    * Verify your provisioning-enabled VolumeType aliases - usually this would be `gp2` but you can validate it by asking your cloud admin or running the below Symp command via the Zadara toolbox VM using your zCompute account (domain) and credentials: \
+    `volume volume-types list -c name -c alias -c is_provisioning_disabled -c is_default -c state -c health -m grep=Normal` \
     The EBS CSI will use 'gp2' as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable in the eksd-terraform project
 * Images:
     * Ubuntu 22.04 image should be imported from the Marketplace to be used for the Bastion VM
@@ -26,7 +26,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * Key-Pair for the worker agents (can be the same)
     * AWS programmatic credentials (access key & secret key) with tenant-admin, AWS MemberFullAccess & IAMFullAccess permissions for the relevant project
 
-## All-In-One deployment
+## All-In-One approach
 For a simplified/demo experience, you can use this option to streamline a cluster deployment with a single command - you will get the OOTB default values of a small-sized cluster with a basic CNI (Flannel) and all addons except for Kasten K10. Note this option should not be used for production-grade deployments (for example the default control-plane is not HA), however you may change the default values as mentioned below to use this approach for any cluster configuration. 
 
 * Copy the `terraform.tfvars.template` file to `terraform.tfvars` and edit the parameters:
@@ -49,9 +49,9 @@ For a simplified/demo experience, you can use this option to streamline a cluste
     * The script will take about 10 minutes for a successful minimal deployment of a single master & worker
     * The script can be rerun for re-apply Terraform changes (for example as part of an upgrade procedure)
     * If neccessary, you can destroy all assets and reset everything with the `destroy-all.sh` script (with the same two credentials parameters/variables)
-* Once completed you will see the kubeconfig content ready for your usage (presented on screen and as a kubeconfig file in the running directory) so you can skip the next two steps and use it as-is ;-) 
+* Once completed you will see the kubeconfig content ready for your usage (presented on screen and as a kubeconfig file in the running directory) so you can skip the next two phased approach steps and use it as-is ;-) 
 
-## Step 1: Automated infrastructure deployment (Terraform)
+## Phased approach step 1 - Infrastructure deployment
 * Go to the `infra-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
     * `api_endpoint` - the URL/IP of the zCompute cluster
@@ -76,7 +76,7 @@ For a simplified/demo experience, you can use this option to streamline a cluste
 * In the next step you will also be required to provide the NLB's private & public IPs - you can get those from the GUI or by running the `get_loadbalancer.sh` script as proposed in the terraform output message
 * Note that the subnets' MTU must match the edge network MTU - if there's a mismatch you should adjust both private & public subnets MTUs accordingly via zCompute GUI before continuing
 
-## Step 2: Automated EKS-D deployment (Terraform)
+## Phased approach step 2 - EKS-D deployment
 * Go to the `eksd-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
     * Populate the sensitive variables (you may want to pass them at runtime rather than save them)
@@ -130,7 +130,7 @@ Once Terraform is over, you will need to get the kubeconfig file from the first 
 
 Use the kubeconfig to connect to the Kubernetes cluster in the usual way - congratulations on your new cluster :) 
 
-## OOTB deployments
+## OOTB content
 Your cluster comes pre-deployed with the below utilities:
 
 * CCM - using the AWS Cloud Provider, providing you the below abilities:
@@ -146,8 +146,8 @@ Your cluster comes pre-deployed with the below utilities:
     * [Calico](https://docs.tigera.io/) - advanced security (may require further configuration)
     * [Cilium](https://cilium.io/) - eBPF-based networking with built-in observability (experimental)
 
-## Addons
-As mentioned in step 2, your cluster can come pre-deployed with the latest versions (at the time of EKS-D image baking) of the below addons. Alternatively, you may change/delete them via helm after the deployment, or choose to install them by yourself:
+## Optional addons
+As mentioned, your cluster can come pre-deployed with the latest versions (at the time of EKS-D image baking) of the below addons. Alternatively, you may change/delete them via helm after the deployment, or choose to install them by yourself:
 
 * EBS CSI driver (enabled by default):
     * The `ebs-cs` StorageClass is pre-configured with the VolumeType and set as the default StorageClass (you may [override](https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/) it with other CSIs)
@@ -171,7 +171,7 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
     * Keep in mind that k10 is only free up to 5 worker nodes - please consult Kasten's [pricing](https://www.kasten.io/pricing) for anything above that
     * For self-installation, use the dedicated [instructions](../../addons/kasten-k10/README.md)
 
-## Optional: Post-deployment DR configuration
+## Optional post-deployment DR configuration
 Unless configured as part of the eksd-terraform variables, the EKS-D cluster's internal ETCD datastore automated backup procedure (running every 2 hours) will only save the latest backup locally within each master node. 
 
 Alternatively, users may configure the Kubernetes secret below in order to dynamically enable/disable backup exports to NGOS/S3 in order to enhance the cluster's [DR capabilities](../../tips/dr/README.md) in case of a control-plane meltdown:
@@ -188,7 +188,7 @@ Once set, the periodical ETCD backup procedure within each master node will also
 
 Please note such configuration will override the pre-defined terraform variables-based exteral backup configuration. 
 
-## Optional: Make your own EKS-D image (Packer)
+## Optional BYOI (create your own EKS-D image with Packer)
 Only relevant if you wish to bake your own EKS-D image
 
 * Requires importing the Ubuntu 22.04 image from the Marketplace to be used as the base image for EKS-D
@@ -196,8 +196,8 @@ Only relevant if you wish to bake your own EKS-D image
 * Requires a local/remote environment with access to the bastion's public IP and AWS access & secret keys to zCompute
 * See the packer project [documentation](eksd-packer/README.md) for more details
 
-## Optional: Zadara CSI
-Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
+## Optional Zadara CSI usage
+Only relevant if you wish to utilize the Zadara CSI and use a dedicated VPSA to persist data from your Kubernetes
 
 * Requires a dedicated VPSA with one pool and a write-enabled user token (access key) - you will need to provide the key to the Zadara CSI Storage Class configuration
 * Make sure routing is in place and Security Group allows communication between the private subnet and the VPSA

@@ -1,15 +1,15 @@
-# How to restore EKS-D from an ETCD backup
+# How to restore EKS-D after control-plane disaster
 
 ## The problem
 In case of a control-plane disaster (for example losing 2 master nodes out of 3) you may need to force ETCD to reset the master node leadership, and in some cases you may even need restore the ETCD datastore from an earlier backup.
 
-Zadara's EKS-D solution includes a built-in periodical ETCD backup procedure within each master node, and potentially also exporting these backups to an external NGOS/S3 location. 
+Zadara's EKS-D solution includes a built-in periodical ETCD backup procedure within each master node, and potentially also exporting these backups to an external NGOS/S3 location (see [here](../../k8s/eksd/README.md#optional-post-deployment-dr-configuration)). 
 
 The restore procedure is quite simple however it differs for various use-cases as mentioned below. 
 
-## The alternatives
+## Use-case alternatives
 1. Restore the ETCD quorom (assuming at least one running master node which was presiously operational)
-2. Restore ETCD database (assuming no running master nodes which were presiously operational)
+2. Restore the ETCD database (assuming no running master nodes which were presiously operational)
 
 ## Example for alternative #1 (restoring ETCD quorom)
 1. SSH to a relevant master node through the bastion VM (you will need the master's key-pair private file)
