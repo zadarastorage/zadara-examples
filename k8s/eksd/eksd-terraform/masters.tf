@@ -65,7 +65,7 @@ resource "random_password" "random_cluster_token_secret" {
 }
 
 resource "random_password" "random_cluster_certificate" {
-  length  = 32
+  length  = 64
   special = false
   lower   = false
   upper   = false
@@ -85,30 +85,36 @@ locals {
 }
 
 module "masters_asg" {
-  source                = "./modules/asg"
-  cluster_name          = var.environment
-  group_name            = "${var.environment}-master"
-  image_id              = var.masters_eksd_ami == null ? var.eksd_ami : var.masters_eksd_ami
-  instance_type         = var.masters_instance_type
-  instance_profile      = local.masters_instance_profile
-  key_pair_name         = var.masters_keyname
-  eksd_masters_lb_url   = local.lb_url
-  eksd_token            = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
-  eksd_certificate      = random_password.random_cluster_certificate.result
-  is_worker             = false
-  security_groups       = [var.security_group_id]
-  subnet_ids            = [var.private_subnet_id]
-  target_group_arns     = [aws_lb_target_group.kube_master.arn]
-  volume_size           = var.masters_volume_size
-  cni_provider          = var.cni_provider
-  pod_network           = var.pod_network
-  eksd_san              = local.eksd_san
-  vpc_id                = var.vpc_id
-  ebs_csi_volume_type   = var.ebs_csi_volume_type
-  install_ebs_csi       = var.install_ebs_csi
-  install_lb_controller = var.install_lb_controller
-  install_autoscaler    = var.install_autoscaler
-  install_kasten_k10    = var.install_kasten_k10
+  source                   = "./modules/asg"
+  cluster_name             = var.environment
+  group_name               = "${var.environment}-master"
+  image_id                 = var.masters_eksd_ami == null ? var.eksd_ami : var.masters_eksd_ami
+  instance_type            = var.masters_instance_type
+  instance_profile         = local.masters_instance_profile
+  key_pair_name            = var.masters_keyname
+  eksd_masters_lb_url      = local.lb_url
+  eksd_token               = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
+  eksd_certificate         = random_password.random_cluster_certificate.result
+  is_worker                = false
+  security_groups          = [var.security_group_id]
+  subnet_ids               = [var.private_subnet_id]
+  target_group_arns        = [aws_lb_target_group.kube_master.arn]
+  volume_size              = var.masters_volume_size
+  cni_provider             = var.cni_provider
+  pod_network              = var.pod_network
+  eksd_san                 = local.eksd_san
+  vpc_id                   = var.vpc_id
+  ebs_csi_volume_type      = var.ebs_csi_volume_type
+  install_ebs_csi          = var.install_ebs_csi
+  install_lb_controller    = var.install_lb_controller
+  install_autoscaler       = var.install_autoscaler
+  install_kasten_k10       = var.install_kasten_k10
+  backup_access_key_id     = var.backup_access_key_id
+  backup_secret_access_key = var.backup_secret_access_key
+  backup_region            = var.backup_region
+  backup_endpoint          = var.backup_endpoint
+  backup_bucket            = var.backup_bucket
+  backup_rotation          = var.backup_rotation
 
   max_size     = var.masters_count + var.masters_addition
   min_size     = var.masters_count

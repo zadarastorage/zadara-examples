@@ -2,17 +2,20 @@
 Below is an example (not OOTB production-grade solution) for an EKS-D automated deployment over zCompute - facilitating cloud integration with dynamic ASG scaling, instance labeling & lifecycle, native load balancing, built-in storage capabilities and optional Kasten K10 as a backup & restore solution. 
 
 ## Known limitations
-* zCompute minimal version is **23.08** (previous versions will not support the EKS-D initialization phase which is implemented in Step #2) in VSC-mode
-* EBS CSI requires modifying the [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html), allowing API calls to be made upon new volume attachment
+* zCompute minimal version is **23.08** running in VSC-mode
 * Upgraded zCompute clouds must have at least one AWS-compatible VolumeType API Alias (io1 / io2 / gp2 / gp3 / sc1 / st1 / standard / sbp1 / sbg1) to be available for provisioning (fresh 23.08 installations have them OOTB)
-* EKS-D cluster name (set by the `environment` variable as mentioned below) must be unique for the account
-* The deployment will create a bastion VM with port 22 (SSH) exposed to the world (and EKS-D nodes with port 22 exposed to the bastion) - you may want to limit the exposure, stop or even terminate the bastion VM post-deployment
-* The Cluster Autoscaler might also scale-down the control-plane ASG, so make sure to use min=max=desired for the ASG capacity (default is 1)
+* The EKS-D cluster name (set by the `environment` variable as mentioned below) must be unique for the account
+* The Cluster Autoscaler might also scale-down the control-plane ASG which may affect the ETCD quorom and even brick the cluster, so make sure to use min=max=desired for the masters ASG capacity (default is 1=1=1)
 
-## Prerequisites: zCompute
+## Security concerns
+* The pre-baked EKS-D image modifies the default Ubuntu [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html) sandboxing permissions by allowing API calls to be made upon new volume attachment (required for the EBS CSI operation)
+* The deployment will create and use a bastion VM with port 22 (SSH) exposed to the world (and EKS-D nodes with port 22 exposed to the bastion) - you may want to limit this exposure, stop or even terminate the bastion VM post-deployment
+* The deployment will create a public-facing NLB for the control-plane api-server, exposing Kubernetes to the world - you may want to limit this exposure to private networks per the documentation below
+
+## zCompute prerequisites
 * Storage:
-    * Verify your provisioning-enabled VolumeType aliases - ask your cloud admin or run the below Symp command (via the Zadara toolbox VM or the symp-cli [container](https://hub.docker.com/r/stratoscale/symp-cli)) using your zCompute account (domain) and credentials: \
-    `volume volume-types list -c name -c alias -c operational_state -c health -m grep=ProvisioningEnabled` \
+    * Verify your provisioning-enabled VolumeType aliases - usually this would be `gp2` but you can validate it by asking your cloud admin or running the below Symp command via the Zadara toolbox VM using your zCompute account (domain) and credentials: \
+    `volume volume-types list -c name -c alias -c is_provisioning_disabled -c is_default -c state -c health -m grep=Normal` \
     The EBS CSI will use 'gp2' as the default VolumeType unless specified otherwise via the terraform `ebs_csi_volume_type` variable in the eksd-terraform project
 * Images:
     * Ubuntu 22.04 image should be imported from the Marketplace to be used for the Bastion VM
@@ -23,7 +26,7 @@ Below is an example (not OOTB production-grade solution) for an EKS-D automated 
     * Key-Pair for the worker agents (can be the same)
     * AWS programmatic credentials (access key & secret key) with tenant-admin, AWS MemberFullAccess & IAMFullAccess permissions for the relevant project
 
-## All-In-One deployment
+## All-In-One approach
 For a simplified/demo experience, you can use this option to streamline a cluster deployment with a single command - you will get the OOTB default values of a small-sized cluster with a basic CNI (Flannel) and all addons except for Kasten K10. Note this option should not be used for production-grade deployments (for example the default control-plane is not HA), however you may change the default values as mentioned below to use this approach for any cluster configuration. 
 
 * Copy the `terraform.tfvars.template` file to `terraform.tfvars` and edit the parameters:
@@ -41,13 +44,14 @@ For a simplified/demo experience, you can use this option to streamline a cluste
 * Optional - create a non-default deployment
     * Check the below infra-terraform & eksd-terraform projects for their specific variables and their default values in the respected `variables.tf` files, or set an environment variable `TF_VAR_<variable name>=<value>` before your run
     * For example, you can set the `ebs_csi_volume_type` variable in the eksd-terraform project to something other than 'gp2' per your storage preferences
+    * IMPORTANT - for production use-cases, Zadara recommends revising all non-default properties mentioned in the sections below - for example setting 3 master nodes (using `masters_count`) for control-plane high-availability, setting the external backup properties (like `backup_bucket`) for control-plane [DR capabilities](../../tips/dr/README.md), etc.
 * Run `apply-all.sh <access_key> <secret_key>` with your access_key & secret_key as the parameters (or set the AWS_ACCESS_KEY_ID & AWS_SECRET_ACCESS_KEY environment variables before running the script without specifying parameters)
     * The script will take about 10 minutes for a successful minimal deployment of a single master & worker
     * The script can be rerun for re-apply Terraform changes (for example as part of an upgrade procedure)
     * If neccessary, you can destroy all assets and reset everything with the `destroy-all.sh` script (with the same two credentials parameters/variables)
-* Once completed you will see the kubeconfig content ready for your usage (presented on screen and as a kubeconfig file in the running directory) so you can skip the next two steps and use it as-is ;-) 
+* Once completed you will see the kubeconfig content ready for your usage (presented on screen and as a kubeconfig file in the running directory) so you can skip the next two phased approach steps and use it as-is ;-) 
 
-## Step 1: Automated infrastructure deployment (Terraform)
+## Phased approach step 1 - Infrastructure deployment
 * Go to the `infra-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
     * `api_endpoint` - the URL/IP of the zCompute cluster
@@ -72,7 +76,7 @@ For a simplified/demo experience, you can use this option to streamline a cluste
 * In the next step you will also be required to provide the NLB's private & public IPs - you can get those from the GUI or by running the `get_loadbalancer.sh` script as proposed in the terraform output message
 * Note that the subnets' MTU must match the edge network MTU - if there's a mismatch you should adjust both private & public subnets MTUs accordingly via zCompute GUI before continuing
 
-## Step 2: Automated EKS-D deployment (Terraform)
+## Phased approach step 2 - EKS-D deployment
 * Go to the `eksd-terraform` directory
 * Copy the `terraform.auto.tfvars.template` file to `terraform.auto.tfvars` and edit the parameters
     * Populate the sensitive variables (you may want to pass them at runtime rather than save them)
@@ -108,6 +112,12 @@ For a simplified/demo experience, you can use this option to streamline a cluste
         * `install_lb_controller` - whether to deploy the AWS Load Balancer Controller addon (defaulting to true)
         * `install_autoscaler` - whether to deploy the Cluster Autoscaler addon (defaulting to true)
         * `install_kasten_k10` - whether to deploy the Kasten K10 addon (defaulting to false)
+        * `backup_access_key_id` - external NGOS/S3 user access-key for ETCD backup export
+        * `backup_secret_access_key` - external NGOS/S3 user secret-key for ETCD backup export
+        * `backup_region` - external NGOS/S3 region for ETCD backup export (defaulting to us-east-1)
+        * `backup_endpoint` - external NGOS endpoint for ETCD backup export (not needed for AWS S3)
+        * `backup_bucket` - external NGOS/S3 bucket name for ETCD backup export
+        * `backup_rotation` - maximal number of remote backup files to retain (defaulting to 100)
 * `terraform init` - this will initialize Terraform for the environment
 * `terraform plan` - this will output the changes that Terraform will actually do (resource creation), for example:
     * EKS-D master nodes ASG + Launch Configuration
@@ -120,7 +130,7 @@ Once Terraform is over, you will need to get the kubeconfig file from the first 
 
 Use the kubeconfig to connect to the Kubernetes cluster in the usual way - congratulations on your new cluster :) 
 
-## OOTB deployments
+## OOTB content
 Your cluster comes pre-deployed with the below utilities:
 
 * CCM - using the AWS Cloud Provider, providing you the below abilities:
@@ -136,8 +146,8 @@ Your cluster comes pre-deployed with the below utilities:
     * [Calico](https://docs.tigera.io/) - advanced security (may require further configuration)
     * [Cilium](https://cilium.io/) - eBPF-based networking with built-in observability (experimental)
 
-## Addons
-As mentioned in step 2, your cluster can come pre-deployed with the latest versions (at the time of EKS-D image baking) of the below addons. Alternatively, you may change/delete them via helm after the deployment, or choose to install them by yourself:
+## Optional addons
+As mentioned, your cluster can come pre-deployed with the latest versions (at the time of EKS-D image baking) of the below addons. Alternatively, you may change/delete them via helm after the deployment, or choose to install them by yourself:
 
 * EBS CSI driver (enabled by default):
     * The `ebs-cs` StorageClass is pre-configured with the VolumeType and set as the default StorageClass (you may [override](https://kubernetes.io/docs/tasks/administer-cluster/change-default-storage-class/) it with other CSIs)
@@ -161,7 +171,24 @@ As mentioned in step 2, your cluster can come pre-deployed with the latest versi
     * Keep in mind that k10 is only free up to 5 worker nodes - please consult Kasten's [pricing](https://www.kasten.io/pricing) for anything above that
     * For self-installation, use the dedicated [instructions](../../addons/kasten-k10/README.md)
 
-## Optional: Make your own EKS-D image (Packer)
+## Optional post-deployment DR configuration
+Unless configured as part of the eksd-terraform variables, the EKS-D cluster's internal ETCD datastore automated backup procedure (running every 2 hours) will only save the latest backup locally within each master node. 
+
+Alternatively, users may configure the Kubernetes secret below in order to dynamically enable/disable backup exports to NGOS/S3 in order to enhance the cluster's [DR capabilities](../../tips/dr/README.md) in case of a control-plane meltdown:
+```shell
+kubectl create secret generic zadara-backup-export \
+    --namespace kube-system \
+    --from-literal=backup_access_key_id="<access key>" \
+    --from-literal=backup_secret_access_key="<secret key>" \
+    --from-literal=backup_region="<bucket region>" \
+    --from-literal=backup_endpoint="<NGOS endpoint (not relevant for S3)>" \
+    --from-literal=backup_bucket="<bucket name>"
+```
+Once set, the periodical ETCD backup procedure within each master node will also export the latest backup into the relevant NGOS/S3 location. 
+
+Please note such configuration will override the pre-defined terraform variables-based exteral backup configuration. 
+
+## Optional BYOI (create your own EKS-D image with Packer)
 Only relevant if you wish to bake your own EKS-D image
 
 * Requires importing the Ubuntu 22.04 image from the Marketplace to be used as the base image for EKS-D
@@ -169,8 +196,8 @@ Only relevant if you wish to bake your own EKS-D image
 * Requires a local/remote environment with access to the bastion's public IP and AWS access & secret keys to zCompute
 * See the packer project [documentation](eksd-packer/README.md) for more details
 
-## Optional: Zadara CSI
-Only relevant if you wish to utilize the Zadara CSI and use a VPSA to persist data from your Kubernetes
+## Optional Zadara CSI usage
+Only relevant if you wish to utilize the Zadara CSI and use a dedicated VPSA to persist data from your Kubernetes
 
 * Requires a dedicated VPSA with one pool and a write-enabled user token (access key) - you will need to provide the key to the Zadara CSI Storage Class configuration
 * Make sure routing is in place and Security Group allows communication between the private subnet and the VPSA

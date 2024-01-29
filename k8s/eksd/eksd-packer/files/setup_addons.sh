@@ -83,7 +83,7 @@ controller:
   volumeMounts:
     - name: trusted-root-cas
       mountPath: /etc/ssl/certs/zadara-ca.crt
-      readonly: true
+      readOnly: true
 sidecars:
   provisioner:
     additionalArgs:
@@ -97,6 +97,7 @@ storageClasses:
   - name: ebs-sc
     annotations:
       storageclass.kubernetes.io/is-default-class: "true"
+    allowVolumeExpansion: true
     parameters:
       type: "gp2"
 volumeSnapshotClasses: 
@@ -124,10 +125,11 @@ extraVolumes:
   - name: trusted-root-cas
     hostPath:
       path: /etc/ssl/certs/ca-certificates.crt
+      type: File
 extraVolumeMounts:
   - name: trusted-root-cas
     mountPath: /etc/ssl/certs/zadara-ca.crt
-    readonly: true
+    readOnly: true
 EOF
 
 # Cluster Autoscaler
@@ -145,12 +147,13 @@ extraVolumes:
   - name: trusted-root-cas
     hostPath:
       path: /etc/ssl/certs/ca-certificates.crt
+      type: File
 extraVolumeMounts:
   - name: cloud-config
     mountPath: config
   - name: trusted-root-cas
     mountPath: /etc/ssl/certs/zadara-ca.crt
-    readonly: true
+    readOnly: true
 tolerations:
 - effect: NoSchedule
   key: node-role.kubernetes.io/control-plane

@@ -7,13 +7,19 @@ data "cloudinit_config" "this" {
     filename     = "cloud-config.yaml"
     content_type = "text/cloud-config"
     content = templatefile("${path.module}/files/cloudinit-server.template.yaml", {
-      token        = var.eksd_token
-      server_url   = var.eksd_masters_lb_url
-      cluster_name = var.cluster_name
-      pod_network  = var.pod_network
-      certificate  = var.eksd_certificate
-      san          = var.eksd_san
-      root_ca_cert = var.root_ca_cert
+      token                    = var.eksd_token
+      server_url               = var.eksd_masters_lb_url
+      cluster_name             = var.cluster_name
+      pod_network              = var.pod_network
+      certificate              = var.eksd_certificate
+      san                      = var.eksd_san
+      root_ca_cert             = var.root_ca_cert
+      backup_access_key_id     = var.backup_access_key_id
+      backup_secret_access_key = var.backup_secret_access_key
+      backup_region            = var.backup_region
+      backup_endpoint          = var.backup_endpoint
+      backup_bucket            = var.backup_bucket
+      backup_rotation          = var.backup_rotation
     })
   }
 

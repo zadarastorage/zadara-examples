@@ -153,6 +153,44 @@ variable "min_size" {
   description = ""
 }
 
+variable "backup_access_key_id" {
+  type        = string
+  sensitive   = true
+  description = ""
+  default     = ""
+}
+
+variable "backup_secret_access_key" {
+  type        = string
+  sensitive   = true
+  description = ""
+  default     = ""
+}
+
+variable "backup_region" {
+  type        = string
+  description = ""
+  default     = "us-east-1"
+}
+
+variable "backup_endpoint" {
+  type        = string
+  description = ""
+  default     = ""
+}
+
+variable "backup_bucket" {
+  type        = string
+  description = ""
+  default     = ""
+}
+
+variable "backup_rotation" {
+  type        = number
+  description = ""
+  default     = 100
+}
+
 variable "root_ca_cert" {
   type        = string
   default     = ""

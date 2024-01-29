@@ -5,11 +5,7 @@
 * Terraform can be installed by following the [HashiCorp documentation](https://developer.hashicorp.com/terraform/downloads?product_intent=terraform)
   * Zadara recommends using version 1.5 and above for optimal experience
   * Due to recent changes in HashiCorp's [licensing](https://www.hashicorp.com/blog/hashicorp-adopts-business-source-license) affecting version 1.6 and above, users may consider switching to OpenTofu - apart from the installation process the only thing that will change is the actual command name (`tofu` instead of `terraform`)
-* OpenTofu can be installed using the [release](https://github.com/opentofu/opentofu/releases) binary, for example on Ubuntu:
-  ```shell
-  wget https://github.com/opentofu/opentofu/releases/download/v1.6.0-alpha3/tofu_1.6.0-alpha3_amd64.deb
-  sudo dpkg -i tofu_1.6.0-alpha3_amd64.deb
-  ```
+* OpenTofu can be installed by following the [Installation guide](https://opentofu.org/docs/intro/install/)
 
 ## AWS Provider
 * zCompute currently support the AWS Provider [version 3.33](https://registry.terraform.io/providers/hashicorp/aws/3.33.0/docs)

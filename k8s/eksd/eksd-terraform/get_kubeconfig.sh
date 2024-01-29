@@ -2,7 +2,7 @@
 
 # Validate the number of arguments
 if [ $# -ne 8 ]; then
-    echo "Error: This script expects 8 arguments"
+    echo "ERROR: This script expects 8 arguments"
     echo "Usage: $0 master_hostname apiserver_private apiserver_public bastion_ip bastion_user bastion_keypair master_user master_keypair"
     exit 1
 fi
@@ -25,12 +25,12 @@ ssh -i $bastion_keypair -o StrictHostKeyChecking=no $bastion_user@$bastion_ip "c
 max_retry=300
 for (( i=1; i<=$max_retry; i++ ))
 do
-    ssh -i $bastion_keypair -o StrictHostKeyChecking=no $bastion_user@$bastion_ip "scp -i ~/master_keypair.pem -o StrictHostKeyChecking=no ${master_user}@${master_hostname}:/etc/kubernetes/admin.conf ~/kubeconfig" >& /dev/null
+    ssh -i $bastion_keypair -o StrictHostKeyChecking=no $bastion_user@$bastion_ip "scp -i ~/master_keypair.pem -o StrictHostKeyChecking=no ${master_user}@${master_hostname}:/etc/kubernetes/zadara/kubeconfig ~/kubeconfig" >& /dev/null
     if [[ $? -eq 0 ]];
     then   
         break
     fi
-    echo "Couldn't obtain the kubeconfig from the master node, sleeping before retrying ($i out of $max_retry)"
+    echo "`date`: Couldn't obtain the kubeconfig from the master node, sleeping before retrying ($i out of $max_retry)"
     sleep 5
 done
 
@@ -38,7 +38,7 @@ done
 scp -i $bastion_keypair -o StrictHostKeyChecking=no $bastion_user@$bastion_ip:~/kubeconfig ./kubeconfig.temp
 if [[ $? -ne 0 ]];
 then
-    echo "Error: Cloudn't obtain the kubeconfig - check the bastion, ssh into the master node, run journalctl and look for kubeadm init errors)"
+    echo "ERROR: failed to obtain kubeconfig - check the bastion, ssh into the oldest master node and search for errors in /var/log/cloud-init-output.log"
     exit 1
 fi
 

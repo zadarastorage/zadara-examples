@@ -30,3 +30,13 @@ sudo pip3 install boto3
 sudo pip3 install retrying 
 sudo pip3 install requests 
 sudo pip3 install pyudev
+
+# ETCD (required for etcdctl snapshot save operation)
+sudo mkdir -p /tmp/etcd-download
+sudo curl -L https://github.com/etcd-io/etcd/releases/download/v3.5.11/etcd-v3.5.11-linux-amd64.tar.gz -o /tmp/etcd-linux-amd64.tar.gz
+sudo tar xzvf /tmp/etcd-linux-amd64.tar.gz -C /tmp/etcd-download --strip-components=1
+sudo rm -f /tmp/etcd-linux-amd64.tar.gz
+sudo mv /tmp/etcd-download/etcdctl /usr/local/bin/etcdctl
+sudo mv /tmp/etcd-download/etcdutl /usr/local/bin/etcdutl
+sudo chmod a+x /usr/local/bin/etcdctl /usr/local/bin/etcdutl
+sudo rm -rf /tmp/etcd-download
