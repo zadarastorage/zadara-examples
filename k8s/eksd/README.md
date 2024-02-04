@@ -1,5 +1,5 @@
 # EKS-D automated deployment
-Below is an example (not OOTB production-grade solution) for an EKS-D automated deployment over zCompute - facilitating cloud integration with dynamic ASG scaling, instance labeling & lifecycle, native load balancing, built-in storage capabilities and optional Kasten K10 as a backup & restore solution. 
+Below is an example (not OOTB production-grade solution, read more about it in the full [documentation](./docs/README.md)) for an EKS-D automated deployment on zCompute - facilitating cloud integration with dynamic ASG scaling, instance labeling & lifecycle, native load balancing, built-in storage capabilities and optional Kasten K10 as a backup & restore solution. 
 
 ## Known limitations
 * zCompute minimal version is **23.08** running in VSC-mode
