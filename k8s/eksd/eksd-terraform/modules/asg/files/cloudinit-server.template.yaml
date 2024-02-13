@@ -34,7 +34,7 @@ write_files:
     content: |
       #!/bin/bash
 
-      echo "ETCD backup - started"
+      echo "`date`: ETCD backup - started"
 
       BACKUP_ROTATION=${ backup_rotation } # multi-masters parallelism will likely make it a bit lower
 
@@ -67,7 +67,7 @@ write_files:
       cluster_id=$${cluster_certificate:0:7}
       local_filename='etcd_backup_'$host_name'_'$host_id'.db'
 
-      echo "ETCD backup - saving locally to /etc/kubernetes/zadara/$local_filename"
+      echo "`date`: ETCD backup - saving locally to /etc/kubernetes/zadara/$local_filename"
       ETCDCTL_API=3 etcdctl \
           --endpoints=https://localhost:2379 \
           --cacert=/etc/kubernetes/pki/etcd/ca.crt \
@@ -76,32 +76,80 @@ write_files:
           snapshot save "/etc/kubernetes/zadara/$local_filename"
 
       if [[ -z "$(echo $AWS_ACCESS_KEY_ID)" || -z "$(echo $AWS_SECRET_ACCESS_KEY)" || -z "$(echo $AWS_REGION)" || -z "$BUCKET" ]]; then
-          echo "ETCD backup - skipping export due to missing S3 information (credentials/region/bucket)"
+          echo "`date`: ETCD backup - skipping export due to missing S3 information (credentials/region/bucket)"
           exit 0
       fi
       timestamp=$(date +%y-%m-%d_%H-%M-%S)
       remote_filename="$timestamp"_"$local_filename"
       remote_prefix="$cluster_name"_"$cluster_id"
 
-      echo ETCD backup - exporting to $BUCKET/$remote_prefix/$remote_filename
+      echo "`date`: ETCD backup - exporting to $BUCKET/$remote_prefix/$remote_filename"
       aws s3 cp /etc/kubernetes/zadara/$local_filename s3://$BUCKET/$remote_prefix/$remote_filename
 
       while [ $(aws s3 ls --recursive s3://$BUCKET/$remote_prefix/ | wc -l) -gt $BACKUP_ROTATION ]
       do
           oldest=$(aws s3api list-objects-v2 --bucket $BUCKET --prefix $remote_prefix --query 'sort_by(Contents, &LastModified)[0].Key' | cut -d\" -f2)
-          echo ETCD backup - attempting to purge $BUCKET/$remote_prefix/$oldest
+          echo "`date`: ETCD backup - attempting to purge $BUCKET/$remote_prefix/$oldest"
           aws s3 rm s3://$BUCKET/$oldest
       done
 
-      echo "ETCD backup - finished"
+      echo "`date`: ETCD backup - finished"
+  - path: /etc/kubernetes/zadara/etcd-watchdog.sh
+    owner: root:root
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+
+      echo "`date`: ETCD watchdog: monitoring unhealthy endpoints"
+
+      shopt -s expand_aliases
+      alias etcdctl="ETCDCTL_API=3 etcdctl --endpoints=https://localhost:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --key=/etc/kubernetes/pki/etcd/peer.key --cert=/etc/kubernetes/pki/etcd/peer.crt"
+
+      bad_endpoints=$(etcdctl endpoint health --cluster -w json | jq -r '.[] | select(.health==false) | .endpoint')
+      if [[ -z "$bad_endpoints" || "$bad_endpoints" = "null" ]]; then
+          echo "`date`: ETCD watchdog: no unhealthy endpoints found (good!) - existing"
+          exit 0
+      fi
+
+      for endpoint in $bad_endpoints; do
+          privateip="$(echo $endpoint | cut -d/ -f3 | cut -d: -f1)"
+          
+          echo "`date`: ETCD watchdog: found bad ETCD endpoint ($endpoint) - searching instances with ip $privateip"
+          api_endpoint="$(curl -s http://169.254.169.254/openstack/latest/meta_data.json | jq -c '.cluster_url' | cut -d\" -f2)"
+          instances="$(aws ec2 --endpoint-url $api_endpoint/api/v2/aws/ec2 describe-instances --output json)"
+          if [ $? -ne 0 ]; then
+              echo "`date`: ETCD watchdog: error getting instances from AWS EC2 API - existing with error"
+              exit 1
+          fi
+          if grep -q "$privateip" <<< "$instances"; then
+              echo "`date`: ETCD watchdog: $privateip actually exist in instances - exiting without removing (might be a temporary issue)"
+              exit 0
+          fi
+          echo "`date`: ETCD watchdog: $privateip was not found within any instance - candidate for ETCD member removal"
+          member=$(etcdctl member list -w json --hex=true | jq -r --arg endpoint $endpoint '.members[] | select(.clientURLS | contains([$endpoint])) | "\(.name) \(.ID)"')
+          name=$(echo "$member" | cut -d ' ' -f 1)
+          id=$(echo "$member" | cut -d ' ' -f 2)
+          if [[ -z "$name" || -z "$id" ]]; then
+              echo "`date`: ETCD watchdog: no member information for $endpoint - existing with error"
+              exit 1
+          fi
+          echo "`date`: ETCD watchdog: removing ETCD member by id $id ($name) from ETCD"
+          etcdctl member remove $id
+      done
+
+      echo "`date`: ETCD watchdog: finished"
   - path: /etc/cron.d/eksd-reload-certs
     owner: root:root
     permissions: "0644"
     content: "0 */1 * * * root kubeadm init phase upload-certs --upload-certs --certificate-key ${ certificate } \n"
-  - path: /etc/cron.d/eksd-backup-etcd
+  - path: /etc/cron.d/eksd-etcd-backup
     owner: root:root
     permissions: "0644"
-    content: "0 */2 * * * root /etc/kubernetes/zadara/etcd-backup.sh \n"
+    content: "0 */2 * * * root /etc/kubernetes/zadara/etcd-backup.sh >> /etc/kubernetes/zadara/etcd-backup.log \n"
+  - path: /etc/cron.d/eksd-etcd-watchdog
+    owner: root:root
+    permissions: "0644"
+    content: "*/2 * * * * root /etc/kubernetes/zadara/etcd-watchdog.sh >> /etc/kubernetes/zadara/etcd-watchdog.log \n"
   - path: /etc/kubernetes/zadara/kubeadm-config.yaml
     owner: root:root
     permissions: "0644"

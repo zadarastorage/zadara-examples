@@ -213,6 +213,7 @@ local_cp_node_wait() {
         >& /dev/null; [[ $? -eq 0 ]];
         do
           warn "Kubeadm join server operation was unsuccessful - retry in 5 seconds"
+          sudo kubeadm reset --force
           sleep 5
         done
     fi
