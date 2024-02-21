@@ -8,7 +8,7 @@ Utilities and blueprints examples for Zadara cloud usage
 ## Kubernetes deployments
 * [Automated deployment for EKS-D](./k8s/eksd/README.md)
 * [Manual instructions for Vanilla/EKS-D deployment](./k8s/manual/vanilla/README.md) (without scaling)
-* [Automated deployment for RKE2](./k8s/rke2/README.md) (obsolete 1.23 version)
+* [Automated deployment for RKE2](./k8s/rke2/README.md) (obsolete version 1.23 - deprecated)
 
 ## Kubernetes addons
 * [AWS EBS CSI Driver](./addons/aws-ebs-csi-driver/README.md)

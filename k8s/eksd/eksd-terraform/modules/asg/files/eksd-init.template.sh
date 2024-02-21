@@ -187,6 +187,7 @@ local_cp_node_wait() {
       fi
       if ${install_kasten_k10}; then
         info "Installing Addon: Kasten K10"
+        sleep 10
         helm install --create-namespace --namespace kasten-io k10 $(ls /etc/kubernetes/zadara/k10-*.tgz)
         sleep 30 # allow ETCD to relax after k10 bombarding it with requests before continuing - to avoid timeouts...
       fi

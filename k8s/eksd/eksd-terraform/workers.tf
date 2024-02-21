@@ -52,6 +52,10 @@ module "workers_asg" {
     {
       key   = "k8s.io/cluster-autoscaler/enabled"
       value = "owned"
+    },
+    {
+      key   = "${var.environment}"
+      value = "data"
     }
   ]
 

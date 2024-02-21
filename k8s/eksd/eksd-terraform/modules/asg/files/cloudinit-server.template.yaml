@@ -76,7 +76,7 @@ write_files:
           snapshot save "/etc/kubernetes/zadara/$local_filename"
 
       if [[ -z "$(echo $AWS_ACCESS_KEY_ID)" || -z "$(echo $AWS_SECRET_ACCESS_KEY)" || -z "$(echo $AWS_REGION)" || -z "$BUCKET" ]]; then
-          echo "`date`: ETCD backup - skipping export due to missing S3 information (credentials/region/bucket)"
+          echo "`date`: ETCD backup - finished (without export - skipped due to missing S3 information)"
           exit 0
       fi
       timestamp=$(date +%y-%m-%d_%H-%M-%S)
@@ -85,6 +85,10 @@ write_files:
 
       echo "`date`: ETCD backup - exporting to $BUCKET/$remote_prefix/$remote_filename"
       aws s3 cp /etc/kubernetes/zadara/$local_filename s3://$BUCKET/$remote_prefix/$remote_filename
+      if [ $? -ne 0 ]; then
+          echo "`date`: ETCD backup - error while exporting (run manually to see the exact issue), exiting with error"
+          exit 1
+      fi
 
       while [ $(aws s3 ls --recursive s3://$BUCKET/$remote_prefix/ | wc -l) -gt $BACKUP_ROTATION ]
       do
@@ -93,7 +97,7 @@ write_files:
           aws s3 rm s3://$BUCKET/$oldest
       done
 
-      echo "`date`: ETCD backup - finished"
+      echo "`date`: ETCD backup - finished (with export)"
   - path: /etc/kubernetes/zadara/etcd-watchdog.sh
     owner: root:root
     permissions: "0755"

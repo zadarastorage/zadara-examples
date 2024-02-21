@@ -66,7 +66,7 @@ For a simplified/demo experience, you can use this option to streamline a cluste
     * Public subnet for the bastion VM and its corresponding Internet Gateway
     * Private subnet for the Kubernetes nodes VMs
     * Routing tables to accomodate public/private subnets
-    * Default Security Group for the VPC as well as RKE2-related one (based on the SG itself)
+    * Default Security Group for the VPC as well as EKS-D-related & bastion-only dedicated ones
     * Bastion VM on the public subnet (**accessible to the world by default**) with access to the private subnet (where the Kubernetes nodes will be located)
     * Network Load Balancer to hold the Kubernetes API Server endpoints - accessible to the world by default, can be hardened for internal-only access if you add the variable `expose_k8s_api_publicly = false`
     * Elastic IPs for the Bastion as well as the Network Load Balancer
@@ -181,7 +181,7 @@ kubectl create secret generic zadara-backup-export \
     --from-literal=backup_access_key_id="<access key>" \
     --from-literal=backup_secret_access_key="<secret key>" \
     --from-literal=backup_region="<bucket region>" \
-    --from-literal=backup_endpoint="<NGOS endpoint (not relevant for S3)>" \
+    --from-literal=backup_endpoint="<NGOS endpoint full URL (not relevant for S3)>" \
     --from-literal=backup_bucket="<bucket name>"
 ```
 Once set, the periodical ETCD backup procedure within each master node will also export the latest backup into the relevant NGOS/S3 location. 
