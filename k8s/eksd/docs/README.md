@@ -1,7 +1,7 @@
 
 # Kubernetes on Zadara: Documentation
 
-This documentation describes how users may deploy their own Kubernetes cluster on top of the Zadara cloud and utilize its built-in integrations with various cloud services. 
+This documentation describes how users may deploy their own Kubernetes cluster on top of the Zadara cloud and utilize its built-in integrations with various cloud services. Parts of this documentation were used in the [Kubernetes on Zadara](https://www.zadara.com/blog/2024/01/29/kubernetes-on-zadara-1/) blog posts series, which you may find relevant as well. 
 
 
 ## Background
@@ -301,44 +301,40 @@ Apart from the CNI, all other addons are deployed using Helm so we can list them
 While the above example is great for demonstration purposes, it’s not suitable for production workloads (for example the control-plane is not highly-available, running on a single VM) - further adjustments and various levels of customizations may be required in order to fit different production use-cases.
 
 
-### Non-default configuration
+### Custom configuration
 
-The All-in-One wrapper script contains only the basic variables in order to facilitate the workflow execution, however the internal Terraform projects support numerous variables for various use-cases and configurations. 
+As a first step toward customizing our EKS-D solution would be to understand what’s actually going on when we run the all-in-one wrapper script (`apply-all.sh`) that deploys our cluster:
 
-For a complete list of variables check the [infra-terraform](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/variables.tf) and [eksd-terraform](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/eksd-terraform/variables.tf) projects’ variable files, below are just few examples:
+![](images/image58.png "")
 
+While this wrapper script utilizes only a few basic variables in order to facilitate the workflow execution, the two internal Terraform projects (responsible for the required infrastructure and the EKS-D deployment) support numerous variables for various use-cases and configurations. 
 
+You can find the complete list of variables within the two projects’ variable files ([infra](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/variables.tf) & [eksd](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/eksd-terraform/variables.tf)), for now let’s explore some of the interesting ones:
 
 * `expose_k8s_api_publicly` in infra-terraform - to control whether the API Server’s NLB will be public-facing or not (default is true)
 * `vpc_cidr` in infra-terraform - to control the VPC’s CIDR (default is 192.168.0.0/16)
-* `masters_count` in eksd-terraform - to control the amount of initial control-plane nodes (set to 3 for an highly-available control-plane)
+* `masters_count` in eksd-terraform - to control the amount of initial control-plane nodes (default is 1, set to 3 for an highly-available control-plane)
 * `ebs_csi_volume_type` in eksd-terraform - to specify the VolumeType to be used by the EBS CSI (default is gp2)
 * `workers_instance_type` in eksd-terraform - to specify the data-plane instance-type (default is z8.large)
 
 Changing the default value of any variable require either changing them inside the relevant project’s `variables.tf` file, or setting them as terraform-based environment variables prior to the execution, for example:
 
-
-```
+``` shell
 $ TF_VAR_masters_count=3 ./apply-all.sh
 ```
-
 
 While the environment variable is an easy way to effect the deployment without editing files, please keep in mind that if you do not persist your changed value inside the project, re-running the deployment without the environment variable will override your original value and may have a negative effect on the deployment. 
 
 Another use-case of variable usage is the ability to control the deployment’s optional add-ons as part of the [eksd-terraform](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/eksd-terraform/variables.tf) variables:
 
-
-
 * `install_ebs_csi` - whether or not to install the [AWS EBS CSI driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master) (default is true)
 * `install_lb_controller` - whether or not to install the [AWS Load Balancer Controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) (default is true)
 * `install_autoscaler` - whether or not to install the [Cluster Autoscaler](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler) (default is true)
-* `install_kasten_k10` - whether or not to install [Kasten K10](https://www.kasten.io/product/?utm_term=&utm_campaign=Blog+Dynamic+Traffic&utm_source=adwords&utm_medium=ppc&hsa_acc=3144319558&hsa_cam=19598062440&hsa_grp=145503929677&hsa_ad=645902390817&hsa_src=g&hsa_tgt=dsa-1053066559429&hsa_kw=&hsa_mt=&hsa_net=adwords&hsa_ver=3&gad_source=1&gclid=Cj0KCQiA7aSsBhCiARIsALFvovwzMddvxuJ1ul_NWwgnCqvCFGOvLs5zQ99tNSreUm769FdOpouW_DwaAs0vEALw_wcB) (default is false)
+* `install_kasten_k10` - whether or not to install [Kasten K10](https://www.veeam.com/products/cloud/kubernetes-data-protection.html) (default is false)
 
 Unlike the optional add-ons, the EKS-D deployment will also install some mandatory ones implicitly - like the CCM (Cloud Controller Manager) component which is the [AWS Cloud Provider for Kubernetes](https://github.com/kubernetes/cloud-provider-aws/tree/master/docs), the [CoreDNS](https://github.com/coredns/coredns) and [kube-proxy](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/) which are considered essentials and bundled within EKS-D. You can’t control these add-ons unless you modify the EKS-D image as well as change the [eksd-init](https://github.com/rrsela/zadara-examples/blob/main/k8s/eksd/eksd-terraform/modules/asg/files/eksd-init.template.sh) bash script (which initializes all Kubernetes nodes) - please note this is considered advanced-level customization and will not be covered here.
 
 One last add-on which is not optional but manageable through Terraform is the [CNI](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) (Container Network Interface). This is a core component of Kubernetes that is handling the entire networking stack so the cluster will not initialize without it, but you may decide which CNI implementation to use with your EKS-D cluster out of the supported ones listed below, using the `cni_provider` variable:
-
-
 
 * [flannel](https://github.com/flannel-io/flannel) - this is the default CNI, fast simple and reliable layer-3 implementation
 * [calico](https://docs.tigera.io/) - this is an advanced multi-layer CNI which adds routing & security features
@@ -347,7 +343,7 @@ One last add-on which is not optional but manageable through Terraform is the [C
 Regarding Cilium, while considered experimental (as we only validate the essential networking functionality as part of our testing procedures) the deployment will also enable the [Hubble UI](https://docs.cilium.io/en/latest/gettingstarted/hubble/) observability feature and you may access it via the [cilium CLI](https://docs.cilium.io/en/latest/gettingstarted/k8s-install-default/#install-the-cilium-cli) by referencing its namespace:
 
 
-```
+```shell
 $ cilium hubble ui --namespace cilium-system
 ```
 
@@ -361,53 +357,41 @@ Which will port-forward the hubble-ui service into our localhost, so you can mon
 Please note that opting to deploy EKS-D with non-default CNI may require additional resources and downloading as part of the initialization phase, so keep that in mind when considering sizing, etc. 
 
 
-### Non-default workflow
+### Custom workflow
 
-In some cases, users may need to run the workflow by themselves rather than using the wrapper script. In such case, the workflow can be broken down into the following steps:
+In some cases, users may wish to run the workflow by themselves rather than using the wrapper script, or they may need to modify the deployment projects in various ways. In such a case, the workflow can be broken down into the below two main phases.
 
+The first phase would be the infrastructure deployment, which handles some prerequisites to the EKS-D deployment (for example, the VPC & subnets in which the Kubernetes cluster will be created). You can run the `infra-terraform` project (or a variation of it) by following the [documentation steps](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/README.md#phased-approach-step-1---infrastructure-deployment), but note that after the second Terraform execution you will still be required to get the NLB IPs, either manually (for example via the zCompute console) or by running the `get_loadbalancer.sh` script with the parameters mentioned within the Terraform outputs:
 
+![](images/image59.png "")
 
-* Infrastructure deployment 
+Alternatively to using the `infra-terraform` project, meaning in case you would like to use your own infrastructure topology (either manually, via zCompute’s VPC Wizard or via another cloud automation facility), please note the below requirements:
+* Any private & public subnet must be tagged according to the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html#network-requirements-subnets) in order for the AWS CCM/LBC to be able and discover them (note the tags are different for private vs. public subnets)
+* You may use either a public-facing or internal NLB for the EKS-D api-server’s endpoint or skip it completely in case you don’t which to have a Load Balancer, but you will need to provide at least the private IP (and potentially also the public IP) of the Load Balancer or of your master instance to the EKS-D deployment phase
 
-    * As an alternative to the `infra-terraform` project, users may deploy their own infrastructure topology either manually, via zCompute’s VPC Wizard or via another cloud automation facility - in such cases please note the below requirements:
-        * Any private & public subnet must be tagged according to the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html#network-requirements-subnets) in order for the AWS CCM/LBC to be able and discover them (note the tags are different for private vs. public subnets)
-        * You may use either a public-facing or internal NLB for the EKS-D api-server’s endpoint or skip it completely in case you don’t which to have a Load Balancer, but you will need to provide at least the private IP of the Load Balancer or of your master instance to the EKS-D deployment phase (and potentially also the public IP) 
+The second phase would be the EKS-D deployment, which handles running both the control-plane and the data-planes nodes, including linking the control-plane VMs to the EKS-D api-server’s NLB. You can run the `eksd-terraform` project (or a variation of it) by following the [documentation steps](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/eksd#phased-approach-step-2---eks-d-deployment), but note that after the Terraform execution you will still be required to get the initial kubeconfig file from one of the master nodes, either manually or by running the `get_kubeconfig.sh` script with the parameters mentioned within the Terraform outputs:
 
-    * Users running the `infra-terraform` project (or a variation of it) will need to execute the `get_loadbalancer.sh` script from its folder with the relevant parameters (all of which are populated in the terraform outputs):
-        * bastion_ip
-        * loadbalancer_dns
-        * access_key
-        * secret_key
-        * bastion_user
-        * bastion_key 
+![](images/image60.png "")
 
-* EKS-D deployment 
+If you wish to get the kubeconfig file manually rather than use the script, please note that under the regular infrastructure topology you would need to go through the bastion VM in order to reach the control-plane VMs. Inside each master VM you will see the relevant file as `/etc/kubernetes/zadara/kubeconfig` (note that for Kubernetes 1.29 and above the user would be [super-admin](https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG%2FCHANGELOG-1.29.md#changelog-since-v1280) rather than the regular admin user).
 
-    * As an alternative to the `eksd-terraform` project, users may deploy their own EKS-D clusters either manually or via another cloud automation facility - in such cases please note the below requirements:
-        * Any VM must be tagged with `kubernetes.io/cluster/&lt;kubernetes-name>` key and `owned` value in order for the CCM to track its status
-        * As a reference example for a manual deployment you may refer to these [manual deployment](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/manual/vanilla) instructions, and further required add-on customizations as listed [here](https://github.com/zadarastorage/zadara-examples/tree/main?tab=readme-ov-file#kubernetes-addons) 
-
-    * Users running the `eksd-terraform` project (or a variation of it) will need to extract the initial kubeconfig specification directly from the initial master VM (located at /etc/kubernetes/zadara/kubeconfig) and if relevant also change the cluster’s server URL from the NLB’s internal IP to the public IP, or execute the `get_kubeconfig.sh` script from the project’s folder with the relevant parameters (all of which are populated in the terraform outputs):
-        * master_hostname 
-        * apiserver_private 
-        * apiserver_public 
-        * bastion_ip 
-        * bastion_user 
-        * bastion_keypair 
-        * master_user 
-        * master_keypair
+Alternatively to using the `eksd-terraform` project, meaning in case you would like to deploy the EKS-D cluster yourself (either manually or via some other cloud automation facility), please note the below requirements:
+* Any VM must be tagged with `kubernetes.io/cluster/<kubernetes-name>` key and `owned` value in order for the CCM to track its status
+* As a reference example for a manual deployment you may refer to these [manual deployment](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/manual/vanilla) instructions, and further required add-on customizations as listed [here](https://github.com/zadarastorage/zadara-examples/tree/main?tab=readme-ov-file#kubernetes-addons)
 
 
-### Image customization
+### Custom image
 
 While Zadara provides several pre-baked images of EKS-D in the cloud’s Marketplace, users may wish to use their own customized image for various reasons - maybe they would like to use a specific EKS-D version which Zadara does not provide (for example, version 1.27), modify some add-ons (for example not using the latest version of everything), harden the base OS image for increased security, etc. 
 
-The BYOI (Bring Your Own Image) methodology allows such customization by following the [EKS-D Packer](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/eksd-packer/README.md) project guidelines, baking the image into a new AMI and afterwards pointing the EKS-D deployment to that customized AMI. In fact, Zadara uses the same Packer project in order to bake our own EKS-D images for the Marketplace, so it is always up to date. 
+The BYOI (Bring Your Own Image) methodology allows such customization by following the [EKS-D Packer](https://github.com/zadarastorage/zadara-examples/blob/main/k8s/eksd/eksd-packer/README.md) project guidelines, baking the image into a new AMI and afterwards pointing the EKS-D deployment to that customized AMI. In fact, Zadara uses the same Packer project in order to bake our own EKS-D images for the Marketplace, so it is always up to date. The project include the following phases:
+
+![](images/image61.png "")
+
+
+Please note that by default, all utilities and add-ons are installed with their latest released versions - you may change this behavior by editing the project’s bash-scripted [files](https://github.com/zadarastorage/zadara-examples/tree/main/k8s/eksd/eksd-packer/files). 
 
 In case you are building your own image with the Packer project, please note the below as you populate the `.auto.pkvars.hvl` parameter file: 
-
-
-
 
 * Zadara recommends basing the EKS-D image on the latest Ubuntu 22.04 (available in the zCompute’s marketplace) for security & compliance reasons. As we follow the same practice with our pre-baked images, most of the existing scripting inside the Packer project is Debian-oriented (`apt` versus `yum`, etc.) and will not require drastic changes for such Operating System family. The actual AMI id can be found on the zCompute console’s Images panel.  
 
@@ -415,8 +399,7 @@ In case you are building your own image with the Packer project, please note the
 
 * You will be required to provide a pre-existing subnet id to be used by Packer’s intermediate VM - make sure the bastion VM can access that subnet with regards to the routing table (usually it’s best to use the same subnet as the bastion VM). 
 
-As an example for such variable file, see the below example for baking a new EKS-D image:
-
+As an example for such variable file, see the below example:
 
 ![](images/image15.png "")
 
@@ -472,7 +455,7 @@ The EKS-D cluster feature an out-of-the-box [AWS EBS CSI driver](https://github.
 Since `ebs-sc` is the default StorageClass, you do not need to specify its name when creating new PVCs. This can be very handy with Helm charts (in which you only need to enable persistence), but also simplify direct claims like the below YAML spec:
 
 
-```
+``` yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -489,7 +472,7 @@ spec:
 With a matching application pod to consume this claim and populate it with timestamps as an example:
 
 
-```
+``` yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -604,7 +587,7 @@ Other annotations may be relevant for various use-cases (for example, controllin
 For example, take the below application pod specification (for an NGOS container):
 
 
-```
+``` yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -630,7 +613,7 @@ spec:
 In order to create a public-facing NLB for it, the below specification is required:
 
 
-```
+``` yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -695,16 +678,16 @@ The public IP is pointing to the NLB, which points to the Kubernetes node (over 
 ![](images/image45.png "")
 
 
-In order to create a public-facing ALB for the same application, the below specification is required:
+In order to create a public-facing ALB for the same application, the below specification is required (note a service is required for the Ingress to work, but that service can be a NodePort and not neccessarily a LoadBalancer which consumes cloud resources):
 
 
-```
+``` yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: my-app-ingress
   annotations:
-    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/scheme: internet-facing
 spec:
   rules:
   - host: 
@@ -750,6 +733,60 @@ The public IP is pointing to the ALB, which points to the Kubernetes node (over 
 ![](images/image36.png "")
 
 
+Note such site would be considered insecure by browsers as it doesn't hold a certificate. Alternatively, if we want to create a secured site we would first need to import a relevant certificate into the cloud:
+
+![](images/image62.png "")
+
+As an alternative service spec we will now create a NodePort which will listen on port 443:
+
+``` yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-service
+spec:
+  selector:
+    app: my-app
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 80
+  type: NodePort
+```
+
+As an alternative ingress spec we will use the `alb.ingress.kubernetes.io/certificate-arn` annotation with the certificate id:
+
+``` yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-app-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: 193939e4-ef0f-4b35-b035-6925cbed150f
+spec:
+  rules:
+  - host: 
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-app-service
+            port:
+              number: 443
+```
+
+
+This time, our ALB's Listener will be configured with the certificate in addition to the rules:
+
+![](images/image63.png "")
+
+And as such ALB (with a proper DNS record set with an A record pointing to the ALB's public IP), the website will be considered secured:
+
+![](images/image64.png "")
+
 
 ### Workload backup & restore
 
@@ -762,7 +799,7 @@ In addition to the regular block storage abilities, the EBS CSI is also pre-conf
 With the snapshotter deployed, you can manually create a VolumeSnapshot of any given PVC using something like the below YAML specification:
 
 
-```
+``` yaml
 apiVersion: snapshot.storage.k8s.io/v1
 kind: VolumeSnapshot
 metadata:
@@ -782,7 +819,7 @@ This will create a snapshot of a pre-existing `ebs-claim` PVC resource, ready to
 With this snapshot, you will be able to recreate a PVC based on it, using something like the below YAML specification:
 
 
-```
+``` yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -927,7 +964,7 @@ While the out-of-the-box experience of the EKS-D deployment is great for quick d
 
 
 * Scalability - cluster-level as well as pod-level static/dynamic scaling
-* Resiliency - highly-available control-plane (minimal 3 nodes for quorum) 
+* Resiliency - highly-available control-plane (including placement rules for infrastructure distribution)
 * Security - limited bastion exposure, OS-level hardening, network policies, etc.
 * Disaster recovery - control/data-plane backups stored outside of the cluster
 
