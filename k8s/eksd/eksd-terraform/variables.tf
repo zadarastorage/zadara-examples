@@ -46,6 +46,18 @@ variable "workers_volume_size" {
   default = "100"
 }
 
+variable "masters_cooldown" {
+  type        = number
+  default     = 180
+  description = "Default cooldown period for master nodes"
+}
+
+variable "workers_cooldown" {
+  type        = number
+  default     = 120
+  description = "Default cooldown period for worker nodes"
+}
+
 variable "masters_count" {
   type        = number
   default     = 1

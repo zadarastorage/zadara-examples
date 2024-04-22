@@ -94,7 +94,8 @@ local_cp_node_wait() {
 {
   # All need to re-configure kubelet and set the instance provider-id (no need to restart, kubeadm will handle that)
   instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-  sudo sed -i s,config.yaml,"config.yaml --cloud-provider=external --provider-id=aws:///symphony/$instance_id", $(systemctl show kubelet | grep DropInPaths | cut -d= -f 2)
+  instance_ip=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+  sudo sed -i s,config.yaml,"config.yaml --node-ip=$instance_ip --cloud-provider=external --provider-id=aws:///symphony/$instance_id", $(systemctl show kubelet | grep DropInPaths | cut -d= -f 2)
 
   if [ "${type}" = "server" ]; then
     # Extract the internal API endpoint of the compute cluster (requires version 23.08 and above)

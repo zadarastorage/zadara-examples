@@ -15,6 +15,7 @@ module "workers_asg" {
   source              = "./modules/asg"
   cluster_name        = var.environment
   group_name          = "${var.environment}-worker"
+  asg_cooldown        = var.workers_cooldown
   image_id            = var.workers_eksd_ami == null ? var.eksd_ami : var.workers_eksd_ami
   instance_type       = var.workers_instance_type
   instance_profile    = local.workers_instance_profile

@@ -69,14 +69,16 @@ resource "aws_launch_configuration" "eksd" {
 }
 
 resource "aws_autoscaling_group" "eksd" {
-  name                 = var.group_name
-  launch_configuration = aws_launch_configuration.eksd.id
-  termination_policies = ["OldestInstance", "NewestInstance", "OldestLaunchConfiguration", "Default"]
-  max_size             = var.max_size
-  min_size             = var.min_size
-  desired_capacity     = var.desired_size
-  vpc_zone_identifier  = var.subnet_ids
-  target_group_arns    = var.target_group_arns
+  name                      = var.group_name
+  default_cooldown          = var.asg_cooldown
+  launch_configuration      = aws_launch_configuration.eksd.id
+  termination_policies      = ["OldestInstance", "NewestInstance", "OldestLaunchConfiguration", "Default"]
+  max_size                  = var.max_size
+  min_size                  = var.min_size
+  desired_capacity          = var.desired_size
+  wait_for_capacity_timeout = var.asg_timeout
+  vpc_zone_identifier       = var.subnet_ids
+  target_group_arns         = var.target_group_arns
 
   dynamic "tag" {
     for_each = var.instance_tags

@@ -3,6 +3,18 @@ variable "group_name" {
   description = ""
 }
 
+variable "asg_cooldown" {
+  type        = number
+  default     = null
+  description = "Default cooldown period (scaling activity intervals - affecting scale down & up speeds)"
+}
+
+variable "asg_timeout" {
+  type        = string
+  default     = "30m"
+  description = "Default timeout for ASG scaling to desired capacity"
+}
+
 variable "ebs_csi_volume_type" {
   type        = string
   default     = "gp2"
