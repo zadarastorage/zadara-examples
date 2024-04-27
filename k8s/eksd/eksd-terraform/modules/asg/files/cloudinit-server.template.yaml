@@ -189,6 +189,66 @@ write_files:
           %{~ endfor ~}
       imageRepository: "public.ecr.aws/eks-distro/kubernetes"
       clusterName: "${ cluster_name }"
+  - path: /usr/bin/mount_nvme.sh
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -x
+      NVME_PREFIX=$${NVME_PREFIX:-"nvme-SAMSUNG_"}
+      MOUNT_PATH=$${MOUNT_PATH:-"/nvme"}
+      INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+
+      function clean_mount_nvme() {
+        mkfs.xfs -f $1
+        mkdir -p $2
+        echo "mount the $1 as $2"
+        mount $1 $2 -t xfs -o defaults
+
+        echo "change $2 file mode to 777"
+        chmod 777 $2
+        touch $2/$INSTANCE_ID
+      }
+
+      function real_mount() {
+        mkdir -p $2
+        echo "mount the $1 as $2"
+        mount $1 $2 -t xfs -o defaults
+        rc=$?
+        if [ $rc -ne 0 ] || [ ! -f $2/$INSTANCE_ID ]; then
+          umount $2
+          clean_mount_nvme $1 $2
+        fi
+      }
+
+      NVMES=$(find /dev/disk/by-id -name "$NVME_PREFIX*_1" ! -name "*part*")
+      IDX=1
+
+      for DEV in $NVMES; do
+        path=$MOUNT_PATH$IDX
+        umount $path
+        real_mount $DEV $path
+        IDX=$(($IDX + 1))
+      done
+  - path: /usr/lib/systemd/system/mount-nvme.service
+    owner: root:root
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=mount-nvme Service
+      After=network.service
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/mount_nvme.sh
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+runcmd:
+  - systemctl daemon-reload
+  - systemctl enable mount-nvme.service
+  - systemctl start --no-block mount-nvme.service
 ca_certs:
   trusted: |
     ${indent(4, root_ca_cert)}
