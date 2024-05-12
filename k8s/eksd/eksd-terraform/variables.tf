@@ -254,7 +254,7 @@ variable "backup_bucket" {
 
 variable "backup_rotation" {
   type        = number
-  description = "ETCD backup remote export rotation (max number of backup files to retain)"
+  description = "ETCD backup rotation (max number of backups to retain, set to 0 to disable all backups)"
   default     = 100
 }
 
