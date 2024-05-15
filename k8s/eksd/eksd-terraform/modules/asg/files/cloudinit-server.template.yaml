@@ -68,7 +68,8 @@ write_files:
       ec2 create-snapshot \
           --volume-id $volume \
           --description "Automated snapshot of EKS-D control-plane boot drive (containing ETCD)" \
-          --tag-specifications 'ResourceType=snapshot,Tags=[{Key=Name,Value=EKS-D_autosnap_'$host_name'},{Key=managed-by,Value='$cluster_name'}]'
+          --tag-specifications 'ResourceType=snapshot,Tags=[{Key=Name,Value=EKS-D_autosnap_'$host_name'},{Key=managed-by,Value='$cluster_name'}]' \
+          --output text
       if [ $? -ne 0 ]; then
           echo "`date`: ETCD backup - error while snapshotting (run manually to see the exact issue), exiting with error"
           exit 1

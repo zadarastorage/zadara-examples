@@ -7,6 +7,7 @@ resource "aws_iam_instance_profile" "profile" {
 resource "aws_iam_role" "role" {
   count = var.use_existing_role ? 0 : 1
   name = var.iam_role_name
+  max_session_duration = var.iam_role_session_duration
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

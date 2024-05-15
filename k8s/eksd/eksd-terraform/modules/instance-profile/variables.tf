@@ -13,6 +13,12 @@ variable "iam_policy" {
   type = string
 }
 
+variable "iam_role_session_duration" {
+  description = "IAM Role maximal session duration (in seconds, defaulting to 12 hours)"
+  type = number
+  default = 43200
+}
+
 variable "use_existing_role" {
   description = "Use existing IAM role"
   type = bool

@@ -117,7 +117,7 @@ For a simplified/demo experience, you can use this option to streamline a cluste
         * `backup_region` - external NGOS/S3 region for ETCD backup export (defaulting to us-east-1)
         * `backup_endpoint` - external NGOS endpoint for ETCD backup export (not needed for AWS S3)
         * `backup_bucket` - external NGOS/S3 bucket name for ETCD backup export
-        * `backup_rotation` - maximal number of remote backup files to retain (defaulting to 100)
+        * `backup_rotation` - maximal number of backups to retain (defaulting to 100, setting to 0 will disable all backups)
 * `terraform init` - this will initialize Terraform for the environment
 * `terraform plan` - this will output the changes that Terraform will actually do (resource creation), for example:
     * EKS-D master nodes ASG + Launch Configuration
@@ -172,9 +172,9 @@ As mentioned, your cluster can come pre-deployed with the latest versions (at th
     * For self-installation, use the dedicated [instructions](../../addons/kasten-k10/README.md)
 
 ## Optional post-deployment DR configuration
-Unless configured as part of the eksd-terraform variables, the EKS-D cluster's internal ETCD datastore automated backup procedure (running every 2 hours) will only save the latest backup locally within each master node. 
+Unless configured as part of the eksd-terraform variables, the EKS-D cluster's internal ETCD datastore automated backup procedure (running every 2 hours) will save the latest backup locally within each master node, as well as take a snapshot of the whole boot drive and save it inside the zCompute cloud. 
 
-Alternatively, users may configure the Kubernetes secret below in order to dynamically enable/disable backup exports to NGOS/S3 in order to enhance the cluster's [DR capabilities](../../tips/dr/README.md) in case of a control-plane meltdown:
+In addition, users may configure the Kubernetes secret below in order to dynamically enable/disable backup exports to NGOS/S3 in order to enhance the cluster's [DR capabilities](../../tips/dr/README.md) in case of a control-plane meltdown:
 ```shell
 kubectl create secret generic zadara-backup-export \
     --namespace kube-system \
