@@ -212,7 +212,7 @@ local_cp_node_wait() {
         --discovery-token-unsafe-skip-ca-verification \
         --certificate-key ${certificate} \
         --control-plane \
-        >& /dev/null; [[ $? -eq 0 ]];
+        2>&1; [[ $? -eq 0 ]];
         do
           warn "Kubeadm join server operation was unsuccessful - retry in 5 seconds"
           sudo kubeadm reset --force
@@ -231,7 +231,7 @@ local_cp_node_wait() {
     until sudo kubeadm join ${server_url} \
       --token ${token} \
       --discovery-token-unsafe-skip-ca-verification \
-      >& /dev/null; [[ $? -eq 0 ]];
+      2>&1; [[ $? -eq 0 ]];
     do 
       warn "Kubeadm join worker operation was unsuccessful - retry in 5 seconds"
       sleep 5
