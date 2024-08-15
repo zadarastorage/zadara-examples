@@ -29,6 +29,17 @@ variable "bastion_keyfile" {
   description = "Relative filepath for the bastion key-pair private key file"
 }
 
+variable "manage_masters_using_asg" {
+  type        = bool
+  default     = false
+  description = "Use AutoScalingGroup to manage masters instance's group or use regular instances"
+}
+
+variable "master_auto_scaling_group_exists" {
+  type        = bool
+  description = "The masters AutoScalingGroup already exists - will not change it if manage_masters_using_asg is false"
+}
+
 variable "eksd_ami" {
   type        = string
   default     = "ami-..."
@@ -82,3 +93,14 @@ variable "masters_load_balancer_public_ip" {
   default     = ""
   description = "Public IP of the NLB - to be populated automatically"
 }
+
+# for compatibility with the local backend in different directory
+variable "vpc_id" {}
+variable "private_subnet_id" {}
+variable "public_subnet_id" {}
+variable "security_group_id" {}
+variable "masters_load_balancer_internal_dns" {}
+variable "masters_load_balancer_id" {}
+variable "bastion_ip" {}
+variable "x_loadbalancer_script" {}
+variable "masters_count" {}

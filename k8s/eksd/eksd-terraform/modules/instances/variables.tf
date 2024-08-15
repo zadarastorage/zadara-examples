@@ -1,3 +1,27 @@
+variable "manage_instances_using_asg" {
+  type = bool
+  description = "Use AutoScalingGroup to manage instance's group or use regular instances"
+  default = false
+}
+
+variable "keep_existing_asg_state" {
+  type = bool
+  description = "Do not change the existing AutoScalingGroup state"
+  default = true
+}
+
+variable "migrate_from_asg" {
+  type = bool
+  description = "Use this flag to gracefully move from configuration using AutoScalingGroup to configuration using regular instances, this will keep the existing number of instances in the ASG which you can remove manually"
+  default = true
+}
+
+variable "remove_master_asg" {
+  type = bool
+  description = "Delete/Do not create the master ASG group - for backward compatability this ASG is kept"
+  default = false
+}
+
 variable "group_name" {
   type        = string
   description = ""
@@ -123,7 +147,10 @@ variable "instance_type" {
 }
 
 variable "instance_profile" {
-  type        = string
+  type        = object({
+    name = string
+    unique_id = string
+  })
   description = ""
 }
 

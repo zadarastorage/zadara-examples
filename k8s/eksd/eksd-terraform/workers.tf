@@ -7,25 +7,32 @@ module "worker_instance_profile" {
   name              = "${var.environment}-workers-instance-profile"
 }
 
+data aws_iam_instance_profile "workers_instance_profile" {
+  count = var.worker_instance_profile != null ? 1 : 0
+  name = var.worker_instance_profile
+}
+
 locals {
-  workers_instance_profile = var.worker_instance_profile != null ? var.worker_instance_profile : module.worker_instance_profile[0].instance_profile_name
+  workers_instance_profile = var.worker_instance_profile != null ? data.aws_iam_instance_profile.workers_instance_profile[0] : module.worker_instance_profile[0].instance_profile
 }
 
 module "workers_asg" {
-  source              = "./modules/asg"
-  cluster_name        = var.environment
-  group_name          = "${var.environment}-worker"
-  asg_cooldown        = var.workers_cooldown
-  image_id            = var.workers_eksd_ami == null ? var.eksd_ami : var.workers_eksd_ami
-  instance_type       = var.workers_instance_type
-  instance_profile    = local.workers_instance_profile
-  key_pair_name       = var.workers_keyname
-  eksd_masters_lb_url = local.lb_url
-  eksd_token          = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
-  is_worker           = true
-  security_groups     = [var.security_group_id]
-  subnet_ids          = [var.private_subnet_id]
-  volume_size         = var.workers_volume_size
+  source                     = "./modules/instances"
+  manage_instances_using_asg = true
+  keep_existing_asg_state    = false
+  cluster_name               = var.environment
+  group_name                 = "${var.environment}-worker"
+  asg_cooldown               = var.workers_cooldown
+  image_id                   = var.workers_eksd_ami == null ? var.eksd_ami : var.workers_eksd_ami
+  instance_type              = var.workers_instance_type
+  instance_profile           = local.workers_instance_profile
+  key_pair_name              = var.workers_keyname
+  eksd_masters_lb_url        = local.lb_url
+  eksd_token                 = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
+  is_worker                  = true
+  security_groups            = [var.security_group_id]
+  subnet_ids                 = [var.private_subnet_id]
+  volume_size                = var.workers_volume_size
 
   max_size     = var.workers_count + var.workers_addition
   min_size     = var.workers_count

@@ -56,6 +56,12 @@ variable "bastion_keyname" {
   description = "Key-pair name to be used in order to access the bastion"
 }
 
+variable "bastion_keyfile" {
+  type        = string
+  default     = "./bastion.pem"
+  description = "Relative filepath for the bastion key-pair private key file"
+}
+
 variable "bastion_ami" {
   type        = string
   description = "AWS id of the image to be used by the bastion instance"

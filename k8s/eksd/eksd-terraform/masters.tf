@@ -1,8 +1,9 @@
-resource "aws_lb_target_group" "kube_master" {
+resource "aws_lb_target_group" "kube_master_asg" {
   name     = "eksd-${var.environment}-masters"
   port     = var.k8s_api_server_port
   protocol = "TCP"
   vpc_id   = var.vpc_id
+
 
   health_check {
     protocol            = "TCP"
@@ -12,15 +13,19 @@ resource "aws_lb_target_group" "kube_master" {
   }
 }
 
-resource "aws_lb_listener" "kube_master" {
-  default_action {
-    target_group_arn = aws_lb_target_group.kube_master.arn
-    type             = "forward"
-  }
+resource "aws_lb_target_group" "kube_master_instances" {
+  name        = "eksd-${var.environment}-sa-masters"
+  port        = var.k8s_api_server_port
+  protocol    = "TCP"
+  vpc_id      = var.vpc_id
+  target_type = "instance"
 
-  load_balancer_arn = var.masters_load_balancer_id
-  port              = var.k8s_api_server_port
-  protocol          = "TCP"
+  health_check {
+    protocol            = "TCP"
+    interval            = 10
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
 }
 
 locals {
@@ -80,42 +85,49 @@ module "master_instance_profile" {
   name              = "${var.environment}-masters-instance-profile"
 }
 
-locals {
-  masters_instance_profile = var.master_instance_profile != null ? var.master_instance_profile : module.master_instance_profile[0].instance_profile_name
+data aws_iam_instance_profile "master_instance_profile" {
+  count = var.master_instance_profile != null ? 1 : 0
+  name = var.master_instance_profile
 }
 
-module "masters_asg" {
-  source                   = "./modules/asg"
-  cluster_name             = var.environment
-  group_name               = "${var.environment}-master"
-  asg_cooldown             = var.masters_cooldown
-  image_id                 = var.masters_eksd_ami == null ? var.eksd_ami : var.masters_eksd_ami
-  instance_type            = var.masters_instance_type
-  instance_profile         = local.masters_instance_profile
-  key_pair_name            = var.masters_keyname
-  eksd_masters_lb_url      = local.lb_url
-  eksd_token               = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
-  eksd_certificate         = random_password.random_cluster_certificate.result
-  is_worker                = false
-  security_groups          = [var.security_group_id]
-  subnet_ids               = [var.private_subnet_id]
-  target_group_arns        = [aws_lb_target_group.kube_master.arn]
-  volume_size              = var.masters_volume_size
-  cni_provider             = var.cni_provider
-  pod_network              = var.pod_network
-  eksd_san                 = local.eksd_san
-  vpc_id                   = var.vpc_id
-  ebs_csi_volume_type      = var.ebs_csi_volume_type
-  install_ebs_csi          = var.install_ebs_csi
-  install_lb_controller    = var.install_lb_controller
-  install_autoscaler       = var.install_autoscaler
-  install_kasten_k10       = var.install_kasten_k10
-  backup_access_key_id     = var.backup_access_key_id
-  backup_secret_access_key = var.backup_secret_access_key
-  backup_region            = var.backup_region
-  backup_endpoint          = var.backup_endpoint
-  backup_bucket            = var.backup_bucket
-  backup_rotation          = var.backup_rotation
+locals {
+  masters_instance_profile = var.master_instance_profile != null ? data.aws_iam_instance_profile.master_instance_profile[0] : module.master_instance_profile[0].instance_profile
+  master_asg_name = "${var.environment}-master"
+}
+
+module "masters_instances" {
+  source                     = "./modules/instances"
+  manage_instances_using_asg = var.manage_masters_using_asg
+  keep_existing_asg_state    = var.master_auto_scaling_group_exists
+  cluster_name               = var.environment
+  group_name                 = local.master_asg_name
+  image_id                   = var.masters_eksd_ami == null ? var.eksd_ami : var.masters_eksd_ami
+  instance_type              = var.masters_instance_type
+  instance_profile           = local.masters_instance_profile
+  key_pair_name              = var.masters_keyname
+  eksd_masters_lb_url        = local.lb_url
+  eksd_token                 = "${random_string.random_cluster_token_id.result}.${random_password.random_cluster_token_secret.result}"
+  eksd_certificate           = random_password.random_cluster_certificate.result
+  is_worker                  = false
+  security_groups            = [var.security_group_id]
+  subnet_ids                 = [var.private_subnet_id]
+  target_group_arns          = aws_lb_target_group.kube_master_asg[*].arn
+  volume_size                = var.masters_volume_size
+  cni_provider               = var.cni_provider
+  pod_network                = var.pod_network
+  eksd_san                   = local.eksd_san
+  vpc_id                     = var.vpc_id
+  ebs_csi_volume_type        = var.ebs_csi_volume_type
+  install_ebs_csi            = var.install_ebs_csi
+  install_lb_controller      = var.install_lb_controller
+  install_autoscaler         = var.install_autoscaler
+  install_kasten_k10         = var.install_kasten_k10
+  backup_access_key_id       = var.backup_access_key_id
+  backup_secret_access_key   = var.backup_secret_access_key
+  backup_region              = var.backup_region
+  backup_endpoint            = var.backup_endpoint
+  backup_bucket              = var.backup_bucket
+  backup_rotation            = var.backup_rotation
 
   max_size     = var.masters_count + var.masters_addition
   min_size     = var.masters_count
@@ -140,4 +152,27 @@ module "masters_asg" {
       value = "control"
     }
   ]
+}
+
+resource "aws_lb_target_group_attachment" "kube_master_instances_attachement" {
+  count = length(module.masters_instances.instance_ids)
+  target_group_arn = aws_lb_target_group.kube_master_instances.arn
+  target_id        = module.masters_instances.instance_ids[count.index]
+}
+
+locals {
+  use_asg_target_group = var.manage_masters_using_asg || (var.master_auto_scaling_group_exists && !(module.masters_instances.current_asg_desired_count == 0))
+}
+
+resource "aws_lb_listener" "kube_master" {
+  default_action {
+    target_group_arn = local.use_asg_target_group ? aws_lb_target_group.kube_master_asg.arn : aws_lb_target_group.kube_master_instances.arn
+    type             = "forward"
+  }
+
+  load_balancer_arn = var.masters_load_balancer_id
+  port              = var.k8s_api_server_port
+  protocol          = "TCP"
+  # Make sure both ASG and AWS Instances objects are created before attaching the ASG
+  depends_on = [aws_lb_target_group.kube_master_asg, aws_lb_target_group.kube_master_instances]
 }

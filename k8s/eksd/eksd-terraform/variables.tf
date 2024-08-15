@@ -36,6 +36,17 @@ variable "workers_eksd_ami" {
   description = "AWS id of the EKS-D image to be used for all data-plane Kubernetes nodes"
 }
 
+variable "manage_masters_using_asg" {
+  type        = bool
+  default     = false
+  description = "Use AutoScalingGroup to manage masters instance's group or use regular instances"
+}
+
+variable "master_auto_scaling_group_exists" {
+  type        = bool
+  description = "The masters AutoScalingGroup already exists - Used by the script to prevent deletion of existing ASG's Instances, and will not change if manage_masters_using_asg is false"
+}
+
 variable "masters_volume_size" {
   type    = string
   default = "50"
@@ -263,3 +274,12 @@ variable "root_ca_cert_path" {
   default     = ""
   description = "Path to the root certificate authority certificate of the cluster"
 }
+
+# for compatibility with the local backend in different directory
+variable "x_loadbalancer_script" {}
+variable "bastion_keyname" {}
+variable "bastion_keyfile" {}
+variable "bastion_user" {}
+variable "workers_keyfile" {}
+variable "masters_keyfile" {}
+variable "bastion_ami" {}

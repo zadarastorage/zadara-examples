@@ -5,6 +5,7 @@ terraform {
       source  = "hashicorp/aws"
     }
   }
+  backend "local" {}
 }
 
 provider "aws" {
