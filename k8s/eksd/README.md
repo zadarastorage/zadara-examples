@@ -9,6 +9,10 @@ Below is an example (not OOTB production-grade solution, read more about it in t
 
 ## Security concerns
 * The pre-baked EKS-D image modifies the default Ubuntu [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html) sandboxing permissions by allowing API calls to be made upon new volume attachment (required for the EBS CSI operation)
+
+**:information_source:** This version uses a new `zadara_disk_mapper.py` script that will not use the API calls if the device-name is encoded in the disk serial received from the driver. 
+This is compatible with the next zCompute major version, which will break the old script. It is recommended to push the updated script to all existing workers, or upgrade them to the new image
+available in zCompute **23.08.4** service pack (which is still compatible with both versions), prior of the upgrade to the next major version.
 * The deployment will create and use a bastion VM with port 22 (SSH) exposed to the world (and EKS-D nodes with port 22 exposed to the bastion) - you may want to limit this exposure, stop or even terminate the bastion VM post-deployment
 * The deployment will create a public-facing NLB for the control-plane api-server, exposing Kubernetes to the world - you may want to limit this exposure to private networks per the documentation below
 

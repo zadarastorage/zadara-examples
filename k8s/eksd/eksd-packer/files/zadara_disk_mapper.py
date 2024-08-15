@@ -20,11 +20,10 @@ def main(kernel_name):
     logging.info('[%s] New Device', kernel_name)
     serial = _get_device_serial(kernel_name)
     logging.info('[%s] Serial is %s', kernel_name, serial)
-    instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id').content.decode('utf-8')
-    availability_zone = requests.get('http://169.254.169.254/latest/meta-data/placement/availability-zone').content.decode('utf-8')
-    endpoint = requests.get('http://169.254.169.254/openstack/latest/meta_data.json').json()['cluster_url']
-    device_name = _get_device_name(instance_id, availability_zone, f'{endpoint}/api/v2/aws/ec2/', serial)
-    logging.info('[%s] Device Name is %s', kernel_name, device_name)
+    device_name = _try_extract_device_name_from_serial(kernel_name, serial)
+    if not device_name:
+        device_name = _try_extract_device_name_from_api(kernel_name, serial)
+
     if device_name:
         print(os.path.relpath(device_name, '/dev'))
 
@@ -42,15 +41,40 @@ def _get_device_serial(kernel_name):
     serial = device.attributes.asstring('serial')
     return serial.replace('-', '')
 
-def _get_device_name(instance_id, region, endpoint, serial):
+
+def _try_extract_device_name_from_serial(kernel_name, serial):
+    if '-' in serial or '00' not in serial:
+        return None
+    logging.info('[%s] trying to get device name from Serial: %s', kernel_name, serial)
+    hex_device_name = serial.split('00')[0]
+    chars = [hex_device_name[i:i + 2] for i in range(0, len(hex_device_name), 2)]
+    device_name = ''.join([chr(int(c, 16)) for c in chars])
+    logging.info('[%s] device name for serial %s is %s', kernel_name, serial, device_name)
+    return '/dev/{}'.format(device_name)
+
+
+def _get_device_name_from_api(instance_id, region, endpoint, kernel_name, serial):
+    logging.info('[%s] trying to get device name from API: %s', kernel_name, serial)
     client = boto3.client('ec2', region_name=region, endpoint_url=endpoint)
     response = client.describe_instances(InstanceIds=[instance_id])
     block_devices = response['Reservations'][0]['Instances'][0]['BlockDeviceMappings']
     for block_device in block_devices:
         vol_id = block_device['Ebs']['VolumeId'].split('-')[1]
         if vol_id.startswith(serial):
+            logging.info('[%s] device name for serial %s is %s', kernel_name, serial, block_device['DeviceName'])
             return block_device['DeviceName']
     return ''
+
+
+def _try_extract_device_name_from_api(kernel_name, serial):
+    logging.info('[%s] Trying to extract device name from serial', kernel_name)
+    instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id').content.decode('utf-8')
+    logging.info('[%s] instance ID is %s', kernel_name, instance_id)
+    availability_zone = requests.get('http://169.254.169.254/latest/meta-data/placement/availability-zone').content.decode('utf-8')
+    endpoint = requests.get('http://169.254.169.254/openstack/latest/meta_data.json').json()['cluster_url']
+    device_name = _get_device_name_from_api(instance_id, availability_zone, f'{endpoint}/api/v2/aws/ec2/', kernel_name, serial)
+    logging.info('[%s] Device Name is %s', kernel_name, device_name)
+    return device_name
 
 
 if __name__ == '__main__':
