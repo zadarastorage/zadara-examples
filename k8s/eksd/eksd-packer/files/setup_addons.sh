@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Versions to use
+AWS_CLOUD_CONTROLLER_MANAGER_CHART_VERSION=${AWS_CLOUD_CONTROLLER_MANAGER_CHART_VERSION:-"--version 0.0.8"}
+AWS_EBS_CSI_DRIVER_CHART_VERSION=${AWS_EBS_CSI_DRIVER_CHART_VERSION:-"--version 2.33.0"}
+AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION=${AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION:-"--version 1.7.2"}
+CLUSTER_AUTO_SCALER_CHART_VERSION=${CLUSTER_AUTO_SCALER_CHART_VERSION:-"--version 9.37.0"}
+KASTEN_K10_CHART_VERSION=${KASTEN_K10_CHART_VERSION:-"--version 7.0.6"}
+
 export NEEDRESTART_MODE=a
 export DEBIAN_FRONTEND=noninteractive
 
@@ -47,8 +54,9 @@ data:
 EOF
 
 # CCM (AWS Cloud Provider for Kubernetes)
-sudo helm pull aws-cloud-controller-manager/aws-cloud-controller-manager -d /etc/kubernetes/zadara/
-sudo helm template aws-cloud-controller-manager/aws-cloud-controller-manager | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
+sudo helm pull aws-cloud-controller-manager/aws-cloud-controller-manager ${AWS_CLOUD_CONTROLLER_MANAGER_CHART_VERSION} -d /etc/kubernetes/zadara/
+sudo helm template aws-cloud-controller-manager/aws-cloud-controller-manager ${AWS_CLOUD_CONTROLLER_MANAGER_CHART_VERSION} \
+          | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
 
 # CNI (Flannel, Calico & Cilium)
 sudo wget -qO /etc/kubernetes/zadara/kube-flannel.yml https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
@@ -70,8 +78,8 @@ sudo wget -qO /etc/kubernetes/zadara/groupsnapshot.storage.k8s.io_volumegroupsna
 sudo wget -qO /etc/kubernetes/zadara/rbac-snapshot-controller.yaml https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
 sudo wget -qO /etc/kubernetes/zadara/setup-snapshot-controller.yaml https://raw.githubusercontent.com/kubernetes-csi/external-snapshotter/master/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
 sudo cat /etc/kubernetes/zadara/setup-snapshot-controller.yaml | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
-sudo helm pull aws-ebs-csi-driver/aws-ebs-csi-driver -d /etc/kubernetes/zadara/
-sudo helm template aws-ebs-csi-driver/aws-ebs-csi-driver | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
+sudo helm pull aws-ebs-csi-driver/aws-ebs-csi-driver ${AWS_EBS_CSI_DRIVER_CHART_VERSION} -d /etc/kubernetes/zadara/
+sudo helm template aws-ebs-csi-driver/aws-ebs-csi-driver ${AWS_EBS_CSI_DRIVER_CHART_VERSION} | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
 cat <<EOF | sudo tee /etc/kubernetes/zadara/values-aws-ebs-csi-driver.yaml
 controller:
   region: 'us-east-1'
@@ -109,8 +117,8 @@ volumeSnapshotClasses:
 EOF
 
 # AWS Load Balancer Controller
-sudo helm pull eks/aws-load-balancer-controller -d /etc/kubernetes/zadara/
-sudo helm template eks/aws-load-balancer-controller --set clusterName=k8s | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
+sudo helm pull eks/aws-load-balancer-controller ${AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION} -d /etc/kubernetes/zadara/
+sudo helm template eks/aws-load-balancer-controller ${AWS_LOAD_BALANCER_CONTROLLER_CHART_VERSION} --set clusterName=k8s | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
 cat <<EOF | sudo tee /etc/kubernetes/zadara/values-aws-load-balancer-controller.yaml
 clusterName: CLUSTER_NAME
 vpcId: VPC_ID
@@ -133,8 +141,8 @@ extraVolumeMounts:
 EOF
 
 # Cluster Autoscaler
-sudo helm pull autoscaler/cluster-autoscaler -d /etc/kubernetes/zadara/
-sudo helm template autoscaler/cluster-autoscaler --set autoDiscovery.clusterName=k8s | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
+sudo helm pull autoscaler/cluster-autoscaler ${CLUSTER_AUTO_SCALER_CHART_VERSION} -d /etc/kubernetes/zadara/
+sudo helm template autoscaler/cluster-autoscaler ${CLUSTER_AUTO_SCALER_CHART_VERSION} --set autoDiscovery.clusterName=k8s | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
 cat <<EOF | sudo tee /etc/kubernetes/zadara/values-cluster-autoscaler.yaml
 awsRegion: us-east-1
 autoDiscovery:
@@ -163,5 +171,5 @@ nodeSelector:
 EOF
 
 # Kasten
-sudo helm pull kasten/k10 -d /etc/kubernetes/zadara/
-sudo helm template kasten/k10 | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
+sudo helm pull kasten/k10 ${KASTEN_K10_CHART_VERSION} -d /etc/kubernetes/zadara/
+sudo helm template kasten/k10 ${KASTEN_K10_CHART_VERSION} | grep image: | sed 's/image://' | sed 's/"//g' | sudo xargs -I % ctr --namespace k8s.io images pull %
