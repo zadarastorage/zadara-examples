@@ -63,3 +63,39 @@ variable "eksd_revision" {
   default     = "3"
   description = "EKS-D release revision"
 }
+
+variable "use_latest_addons" {
+  type        = string
+  default     = "false"
+  description = "Whether to use the latest addons or the baked-in versions from the script"
+}
+
+variable "cloud_controller_addon_chart_version" {
+  type        = string
+  default     = ""
+  description = "CloudController addon chart version - if not set will use the baked-in version for the EKSD version"
+}
+
+variable "aws_ebs_csi_driver_chart_version" {
+  type        = string
+  default     = ""
+  description = "EBS CSI driver chart version - if not set will use the baked-in version for the EKSD version"
+}
+
+variable "aws_load_balancer_controller_chart_version" {
+  type        = string
+  default     = ""
+  description = "LoadBalancer Controller addon chart version - if not set will use the baked-in version for the EKSD version"
+}
+
+variable "cluster_auto_scaler_chart_version" {
+  type        = string
+  default     = ""
+  description = "Cluster auto scaler chart version - if not set will use the baked-in version for the EKSD version"
+}
+
+variable "kasten_k10_chart_version" {
+  type        = string
+  default     = ""
+  description = "Kasten K10 addon chart version - if not set will use the baked-in version for the EKSD version"
+}

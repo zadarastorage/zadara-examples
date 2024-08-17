@@ -19,10 +19,15 @@ Inside the `eksd-packer` folder you will find an [HashiCorp Packer](https://www.
    * `subnet_id` - Subnet ID to provision the builder in (public subnet)
    * `ssh_keypair_name` - Keypair name to use for the builder
    * `private_keypair_path` - local path to the SSH private key (will be used by packer script to login in to the bastion and builder instances)
-
 * You may also specify the relevant EKS-D version & revision of your choice (otherwise the default ones will be used) as stated in the [EKS-D releases](https://github.com/aws/eks-distro/blob/main/README.md#releases):
     * `eksd_k8s_version` - for example, "1-28"
     * `eksd_revision` - for example, "5"
+    * `use_latest_addons` - Use the latest addons version (by default the addons versions will be the validated versions per EKSD version)
+    * `cloud_controller_addon_chart_version` - Use a specific version of the cloud controller addon chart
+    * `aws_ebs_csi_driver_chart_version` - Use a specific version of the EBS CSI driver chart
+    * `aws_load_balancer_controller_chart_version` - Use a specific version of the load balancer controller chart
+    * `cluster_auto_scaler_chart_version` - Use a specific version of the auto scaler chart
+    * `kasten_k10_chart_version` - Use a specific version of the Kasten K10 chart
 
 * Run the packer command using: 
   ```shell

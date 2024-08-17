@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 export NEEDRESTART_MODE=a
 export DEBIAN_FRONTEND=noninteractive

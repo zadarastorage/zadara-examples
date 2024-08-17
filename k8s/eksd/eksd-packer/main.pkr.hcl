@@ -98,7 +98,7 @@ build {
   provisioner "shell" {
     inline = [
       "sudo chmod +x /tmp/setup_addons.sh",
-      "sudo /tmp/setup_addons.sh",
+      "sudo USE_LATEST_ADDONS=${var.use_latest_addons} EKSD_K8S_VERSION=${var.eksd_k8s_version} EKSD_REVISION=${var.eksd_revision} /tmp/setup_addons.sh",
     ]
   }
 
