@@ -29,7 +29,6 @@ def main(kernel_name):
 
 
 def _log_setup():
-    return
     log_handler = logging.handlers.RotatingFileHandler('/var/log/zadara_disk_mapper.log', maxBytes=20000, backupCount=5)
     logger = logging.getLogger()
     logger.addHandler(log_handler)
@@ -62,8 +61,9 @@ def _get_device_name_from_api(instance_id, region, endpoint, kernel_name, serial
     for volume in volumes:
         vol_id = volume['VolumeId'].split('-')[1]
         if vol_id.startswith(serial):
-            logging.info('[%s] device name for serial %s is %s', kernel_name, serial, block_device['DeviceName'])
-            return block_device['DeviceName']
+            device_name = volume['Attachments'][0]['Device']
+            logging.info('[%s] device name for serial %s is %s', kernel_name, serial, device_name)
+            return device_name
     return ''
 
 
