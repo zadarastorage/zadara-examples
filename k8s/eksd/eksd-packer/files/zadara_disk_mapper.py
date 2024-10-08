@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 # flake8: noqa
-
+import re
 # Make sure pyudev is upgraded to at least 0.21
 
 import sys
@@ -30,6 +30,8 @@ def main(kernel_name):
 
 def _log_setup():
     log_handler = logging.handlers.RotatingFileHandler('/var/log/zadara_disk_mapper.log', maxBytes=20000, backupCount=5)
+    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    log_handler.setFormatter(formatter)
     logger = logging.getLogger()
     logger.addHandler(log_handler)
     logger.setLevel(logging.INFO)
@@ -49,6 +51,12 @@ def _try_extract_device_name_from_serial(kernel_name, serial):
     hex_device_name = serial.split('00')[0]
     chars = [hex_device_name[i:i + 2] for i in range(0, len(hex_device_name), 2)]
     device_name = ''.join([chr(int(c, 16)) for c in chars])
+
+    device_pattern = re.compile("^(?:hd|sd|vd|xvd|ubd)[a-z]*[0-9]*$")
+    if not device_pattern.match(device_name):
+        logging.warning('[%s] device name in serial %s is not valid: %s', kernel_name, serial, device_name)
+        return None
+
     logging.info('[%s] device name for serial %s is %s', kernel_name, serial, device_name)
     return '/dev/{}'.format(device_name)
 
@@ -68,7 +76,7 @@ def _get_device_name_from_api(instance_id, region, endpoint, kernel_name, serial
 
 
 def _try_extract_device_name_from_api(kernel_name, serial):
-    logging.info('[%s] Trying to extract device name from serial', kernel_name)
+    logging.info('[%s] Trying to extract device name from API', kernel_name)
     instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id').content.decode('utf-8')
     logging.info('[%s] instance ID is %s', kernel_name, instance_id)
     availability_zone = requests.get('http://169.254.169.254/latest/meta-data/placement/availability-zone').content.decode('utf-8')
