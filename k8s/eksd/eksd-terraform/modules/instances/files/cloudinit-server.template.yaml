@@ -75,9 +75,9 @@ write_files:
           exit 1
       fi
 
-      while [ $(ec2 describe-snapshots --filter "Name=tag:managed-by,Values=c-k8s" --query 'Snapshots[*].SnapshotId | length(@)') -gt $BACKUP_ROTATION ]
+      while [ $(ec2 describe-snapshots --filter "Name=tag:managed-by,Values='$cluster_name'" --query 'Snapshots[*].SnapshotId | length(@)') -gt $BACKUP_ROTATION ]
       do
-          oldest=$(ec2 describe-snapshots --filter "Name=tag:managed-by,Values=c-k8s" --query 'sort_by(Snapshots, &StartTime)[0].SnapshotId' | cut -d\" -f2)
+          oldest=$(ec2 describe-snapshots --filter "Name=tag:managed-by,Values='$cluster_name'" --query 'sort_by(Snapshots, &StartTime)[0].SnapshotId' | cut -d\" -f2)
           echo "`date`: ETCD backup - attempting to purge snapshot $oldest"
           ec2 delete-snapshot --snapshot-id $oldest
       done
