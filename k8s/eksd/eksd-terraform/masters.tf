@@ -150,6 +150,10 @@ module "masters_instances" {
     {
       key   = "${var.environment}"
       value = "control"
+    },
+    {
+      key   = "CPU_TAG_silver_cpu"
+      value = ""
     }
   ]
 }

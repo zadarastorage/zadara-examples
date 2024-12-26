@@ -49,10 +49,8 @@ then
 fi
 
 INFRA_STATE_PATH="${STATE_PATH}/infra-terraform/terraform.state"
-INFRA_BACKEND_CFG="${STATE_PATH}/infra-terraform-backend.hcl"
 
 EKSD_STATE_PATH="${STATE_PATH}/eksd-terraform/terraform.state"
-EKSD_BACKEND_CFG="${STATE_PATH}/eksd-terraform-backend.hcl"
 
 INFRA_TFVARS_PATH="${STATE_PATH}/infra.tfvars"
 TERRAFORM_TFVARS_PATH="${STATE_PATH}/terraform.tfvars"
@@ -89,7 +87,7 @@ fi
 
 # Step 1 - EKS-D deployment
 cd ./eksd-terraform
-terraform init -backend-config="${EKSD_BACKEND_CFG}"
+terraform init
 # Initialize parameters
 bastion_user=$(echo var.bastion_user | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)
 bastion_keyfile=$(echo var.bastion_keyfile | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)
@@ -118,7 +116,7 @@ fi
 
 # Step 2 - infrastructure automation
 cd ./infra-terraform
-terraform init -backend-config="${INFRA_BACKEND_CFG}"
+terraform init
 TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key \
     terraform destroy -compact-warnings ${AUTO_APPROVE} -var-file "${TERRAFORM_TFVARS_PATH}"
 rm -f "${INFRA_STATE_PATH}" "${INFRA_STATE_PATH}.backup"

@@ -5,7 +5,12 @@ terraform {
       source  = "hashicorp/aws"
     }
   }
-  backend "local" {}
+  backend "s3" {
+    bucket = "bucket_name"
+    key    = "tfstate/infra/terraform.tfstate"
+    region = "region_name"
+
+  }
 }
 
 provider "aws" {

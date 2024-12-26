@@ -128,7 +128,7 @@ resource "aws_instance" "group-instances" {
   tags = merge(local.instance_tags, {"Name"="${var.group_name}-sa-${format("%d", count.index + local.starting_standalone_instance_index)}"})
 
   lifecycle {
-    ignore_changes        = [root_block_device, ami, tags["Name"]]
+    ignore_changes        = [root_block_device, ami, tags["Name"], user_data_base64]
     create_before_destroy = true
   }
 }

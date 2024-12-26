@@ -272,6 +272,9 @@ write_files:
       [Install]
       WantedBy=multi-user.target
 runcmd:
+  - /usr/sbin/update-ca-certificates
+  - systemctl restart containerd
+  - apt-get install -y nfs-common
   - systemctl daemon-reload
   - systemctl enable mount-nvme.service
   - systemctl start --no-block mount-nvme.service

@@ -65,10 +65,8 @@ else
 fi
 
 INFRA_STATE_PATH="${STATE_PATH}/infra-terraform/terraform.tfstate"
-INFRA_BACKEND_CFG="${STATE_PATH}/infra-terraform-backend.hcl"
 
 EKSD_STATE_PATH="${STATE_PATH}/eksd-terraform/terraform.tfstate"
-EKSD_BACKEND_CFG="${STATE_PATH}/eksd-terraform-backend.hcl"
 
 INFRA_TFVARS_PATH="${STATE_PATH}/infra.tfvars"
 TERRAFORM_TFVARS_PATH="${STATE_PATH}/terraform.tfvars"
@@ -82,13 +80,7 @@ fi
 mkdir -p "${STATE_PATH}/infra-terraform"
 mkdir -p "${STATE_PATH}/eksd-terraform"
 
-cat > "${INFRA_BACKEND_CFG}" <<EOF
-path = "${INFRA_STATE_PATH}"
-EOF
 
-cat > "${EKSD_BACKEND_CFG}" <<EOF
-path = "${EKSD_STATE_PATH}"
-EOF
 
 # Populate ACCESS KEY variables
 if [[ ! -z "${AWS_ACCESS_KEY_ID}" ]]
@@ -122,7 +114,7 @@ then
   fi
   # Step 1 - infrastructure automation
   cd ./infra-terraform
-  terraform init -backend-config="${INFRA_BACKEND_CFG}" ${INITIALIZE_STATE}
+  terraform init ${INITIALIZE_STATE}
   TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key \
       terraform apply -compact-warnings ${AUTO_APPROVE} -var-file "${TERRAFORM_TFVARS_PATH}"
   TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key \
@@ -158,7 +150,7 @@ fi
 
 # Step 2 - EKS-D deployment
 cd ./eksd-terraform
-terraform init -backend-config="${EKSD_BACKEND_CFG}" ${INITIALIZE_STATE}
+terraform init  ${INITIALIZE_STATE}
 # Initialize parameters
 bastion_user=$(echo var.bastion_user | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)
 bastion_keyfile=$(echo var.bastion_keyfile | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)

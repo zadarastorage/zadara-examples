@@ -24,9 +24,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 
-# .lock.hcl files
-*.lock.hcl
-
 .vscode
 .terraform
 *.tfstate*
