@@ -93,7 +93,7 @@ then
   fi
   curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
   unzip -qo awscliv2.zip
-  sudo ./aws/install 2>/dev/null || true
+  sudo ./aws/install 1>/dev/null || true
 fi
 EOF
 
