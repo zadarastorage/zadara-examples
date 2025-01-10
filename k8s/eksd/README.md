@@ -16,7 +16,23 @@ However, it is recommended to replace the `local` backend with a production-grad
 Use the `--state-path` flag with the `apply-all.sh` and `destory-all.sh` scripts to specify the state directory. If not provided
 the system will use the local directory.
 * Deletion and recreation of the same plan in a short duration may fail due to asynchronous resource deletion and name collisions. Wait at least 10 minutes between consecutive invocations.
+## Remote backend configuration
+* The deployment comes with local backend by default which isn't recommended for production-grade clusters.
+* The `apply-all.sh` and `destroy-all.sh` scripts can support local or remote backend, once a backend.tf file has been detected within `infra-terraform` or `eksd-terraform` remote backend will be initalized instead of the default local one.
+*  in order to configure remote backend add a backend.tf (must be named backend.tf) config file to `infra-terraform` & `eksd-terraform` folders respectively. <br>
+`backend.tf.example` :
+```
+terraform {
+    backend "s3" {
+      bucket = "dev-bucket"
+      key    = "tfstate/infra/terraform.tfstate"
+      region = "us-east-1"
+    }
+}
+```
+* the deployment creates two state files, one for infra and the other for eksd, therefore it is recommended to create two seperare folders within the remote location, e.g.  `tfstate/infra/terraform.tfstate` & `tfstate/eksd/terraform.tfstate` and point the backend keys to the respective path.
 
+* **:warning:** if remote backend is configured always make sure both `infra-terraform` & `eksd-terraform` contain a backend.tf file, otherwise you might end up in a split brain scenario where you have a local backend for the infra and a remote backend for eksd or vice versa.
 ## Security concerns
 * The pre-baked EKS-D image modifies the default Ubuntu [udev service](https://manpages.ubuntu.com/manpages/jammy/man7/udev.7.html) sandboxing permissions by allowing API calls to be made upon new volume attachment (required for the EBS CSI operation)
 

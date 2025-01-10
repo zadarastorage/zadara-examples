@@ -82,13 +82,31 @@ fi
 mkdir -p "${STATE_PATH}/infra-terraform"
 mkdir -p "${STATE_PATH}/eksd-terraform"
 
-cat > "${INFRA_BACKEND_CFG}" <<EOF
-path = "${INFRA_STATE_PATH}"
+terraform_init() {
+TF_INIT_COMMAND="terraform init ${INITIALIZE_STATE}"
+BACKEND_FILE="backend.tf"
+    if [ -f "${BACKEND_FILE}" ]; then
+        echo "Custom backend config has been found!"
+        $TF_INIT_COMMAND
+    else
+        echo "WARN: Local backend has been configured because no backend.tf file has been found. It is advised to use a remote backend for production use!"
+        cat > "${INFRA_BACKEND_CFG}" <<EOF
+terraform {
+    backend "local" {
+        path = "${INFRA_STATE_PATH}"
+    }
+}
 EOF
-
-cat > "${EKSD_BACKEND_CFG}" <<EOF
-path = "${EKSD_STATE_PATH}"
+        cat > "${EKSD_BACKEND_CFG}" <<EOF
+terraform {
+    backend "local" {
+        path = "${INFRA_STATE_PATH}"
+    }
+}
 EOF
+        $TF_INIT_COMMAND
+    fi
+}
 
 # Populate ACCESS KEY variables
 if [[ ! -z "${AWS_ACCESS_KEY_ID}" ]]
@@ -122,7 +140,7 @@ then
   fi
   # Step 1 - infrastructure automation
   cd ./infra-terraform
-  terraform init -backend-config="${INFRA_BACKEND_CFG}" ${INITIALIZE_STATE}
+  terraform_init
   TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key \
       terraform apply -compact-warnings ${AUTO_APPROVE} -var-file "${TERRAFORM_TFVARS_PATH}"
   TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key \
@@ -158,7 +176,7 @@ fi
 
 # Step 2 - EKS-D deployment
 cd ./eksd-terraform
-terraform init -backend-config="${EKSD_BACKEND_CFG}" ${INITIALIZE_STATE}
+terraform_init
 # Initialize parameters
 bastion_user=$(echo var.bastion_user | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)
 bastion_keyfile=$(echo var.bastion_keyfile | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)
