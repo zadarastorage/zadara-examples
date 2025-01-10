@@ -55,6 +55,18 @@ EKSD_STATE_PATH="${STATE_PATH}/eksd-terraform/terraform.state"
 INFRA_TFVARS_PATH="${STATE_PATH}/infra.tfvars"
 TERRAFORM_TFVARS_PATH="${STATE_PATH}/terraform.tfvars"
 
+terraform_init() {
+TF_INIT_COMMAND="terraform init"
+BACKEND_FILE="backend.tf"
+
+    if [ -f "${BACKEND_FILE}" ]; then
+        echo "Custom backend config has been found!"
+        $TF_INIT_COMMAND
+    else
+        echo "Local backend config has been found!"
+        $TF_INIT_COMMAND
+    fi
+}
 if ! test -f "${TERRAFORM_TFVARS_PATH}"
 then
   echo "ERROR: ${TERRAFORM_TFVARS_PATH} or ${INFRA_TFVARS_PATH} files not found - cannot continue."
@@ -87,7 +99,7 @@ fi
 
 # Step 1 - EKS-D deployment
 cd ./eksd-terraform
-terraform init
+terraform_init
 # Initialize parameters
 bastion_user=$(echo var.bastion_user | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)
 bastion_keyfile=$(echo var.bastion_keyfile | terraform console -var-file "${TERRAFORM_TFVARS_PATH}" | tail -n 1 |cut -d\" -f2)
@@ -116,7 +128,7 @@ fi
 
 # Step 2 - infrastructure automation
 cd ./infra-terraform
-terraform init
+terraform_init
 TF_VAR_cluster_access_key=$access_key TF_VAR_cluster_access_secret_id=$secret_key \
     terraform destroy -compact-warnings ${AUTO_APPROVE} -var-file "${TERRAFORM_TFVARS_PATH}"
 rm -f "${INFRA_STATE_PATH}" "${INFRA_STATE_PATH}.backup"
