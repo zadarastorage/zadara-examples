@@ -19,7 +19,7 @@ the system will use the local directory.
 ## Remote backend configuration
 * The deployment comes with local backend by default which isn't recommended for production-grade clusters.
 * The `apply-all.sh` and `destroy-all.sh` scripts can support local or remote backend, once a backend.tf file has been detected within `infra-terraform` or `eksd-terraform` remote backend will be initalized instead of the default local one.
-*  in order to configure remote backend add a backend.tf (must be named backend.tf) config file to `infra-terraform` & `eksd-terraform` folders respectively. <br>
+*  in order to configure remote backend add a backend.tf (must be named backend.tf) config file to `infra-terraform` & `eksd-terraform` folders respectively, before the first time your run the apply-all.sh script. <br>
 `backend.tf.example` :
 ```
 terraform {
