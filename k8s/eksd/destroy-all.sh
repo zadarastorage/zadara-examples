@@ -49,8 +49,10 @@ then
 fi
 
 INFRA_STATE_PATH="${STATE_PATH}/infra-terraform/terraform.state"
+INFRA_BACKEND_CFG="${STATE_PATH}/infra-terraform-backend.hcl"
 
 EKSD_STATE_PATH="${STATE_PATH}/eksd-terraform/terraform.state"
+EKSD_BACKEND_CFG="${STATE_PATH}/eksd-terraform-backend.hcl"
 
 INFRA_TFVARS_PATH="${STATE_PATH}/infra.tfvars"
 TERRAFORM_TFVARS_PATH="${STATE_PATH}/terraform.tfvars"
