@@ -1,5 +1,0 @@
-# Infrastructure Overview
-
-### zCompute
-### Kubernetes
-

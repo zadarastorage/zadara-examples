@@ -104,13 +104,13 @@ On first try it will fail due to resources created by the Kubernetes cluster and
 
 ### Onyx Application
 
-[Configuring Onyx](onyx_configure.md)
-
+[Configuring Onyx](onyx_configure.md)   
 [Interacting with Onyx](onyx_usage.md)
 
 ## Infrastructure overview
 
-[Cluster and Onyx Infrastructure Overview](onyx_infrastructure.md)
+[Infrastructure Overview - zCompute](onyx_infrastructure-zcompute.md)   
+[Infrastructure Overview - Kubernetes](onyx_infrastructure-kubernetes.md)
 
 ## Production Cluster Considerations
 

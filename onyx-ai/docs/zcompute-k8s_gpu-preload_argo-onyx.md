@@ -127,7 +127,7 @@ Both ArgoCD and Grafana will create a random administrator password and store it
 
 Onyx is configured by default with standard authentication, so the first user to create an account will be set as the admin.
 
-If `k8s_ingress_rootdomain` was defined, then it is configured to `onyx.<your-tld-domain>` and will only answer to that domain.
+If `k8s_ingress_rootdomain` was defined, then it is configured to `onyx.<your-tld-domain>` and will only answer to that domain.   
 If `k8s_ingress_rootdomain` was left empty, then it was configured as a "catch-all" in the Traefik Loadbalancer. So it can be accessed via `https://<public-ip>` gained above.   
 
 #### ArgoCD
@@ -211,13 +211,13 @@ On first try it will fail due to resources created by the Kubernetes cluster and
 
 ### Onyx Application
 
-[Configuring Onyx](onyx_configure.md)
-
+[Configuring Onyx](onyx_configure.md)   
 [Interacting with Onyx](onyx_usage.md)
 
 ## Infrastructure overview
 
-[Cluster and Onyx Infrastructure Overview](onyx_infrastructure.md)
+[Infrastructure Overview - zCompute](onyx_infrastructure-zcompute.md)   
+[Infrastructure Overview - Kubernetes](onyx_infrastructure-kubernetes.md)
 
 ## Production Cluster Considerations
 
