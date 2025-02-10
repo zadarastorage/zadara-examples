@@ -12,7 +12,7 @@ function _usage {
 function _save {
 	PATTERN="${1}"
 	LINE="${2}"
-	sed -i "/^${PATTERN}$/a${LINE}" "${TFVARS_FILE}"
+	awk -v pattern="${PATTERN}" -v line="${LINE}" '$0 == pattern {print; print line; next} {print}' "${TFVARS_FILE}" > "${TFVARS_FILE}.tmp" && mv "${TFVARS_FILE}.tmp" "${TFVARS_FILE}"
 }
 
 function wizard {
@@ -32,7 +32,7 @@ function wizard {
 			DEFAULT=''
 			[ "${TYPE}" == "string" ] && DEFAULT=$(echo "$CFG" | awk -F'["]' '/default /{print $2}')
 			[ "${TYPE}" == "bool" ] && DEFAULT=$(echo "$CFG" | awk -F'[ ]' '/default /{print $NF}')
-			[ -z "${DEFAULT:-}" ] && DEFAULT=$(echo "$CFG" | awk '/default /{match($0, /= (.*)$/, arr); print arr[1]}')
+			[ -z "${DEFAULT:-}" ] && DEFAULT=$(echo "$CFG" | awk '/default /{split($0, arr, "="); sub(/^ */, "", arr[2]); print arr[2]}')
 			DESCRIPTION=$(echo "$CFG" | awk -F'["]' '/description /{print $2}')
 			SENSITIVE=$(echo "$CFG" | awk -F'[ ]' '/sensitive /{print $NF}')
 			echo -e "# ${VAR}(${TYPE}) => ${DESCRIPTION}"
