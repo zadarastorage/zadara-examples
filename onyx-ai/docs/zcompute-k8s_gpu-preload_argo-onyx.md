@@ -89,104 +89,14 @@ This includes [Traefik](https://traefik.io/) as a default Ingress controller, wh
    * `<cluster-name>-kapi` - Was created by Terraform to provide HA access for internal k3s APIs to all cluster members, this should be left alone
 5. The **Public IP** of the entry with the word `traefik` in it is the loadbalancer for your deployment.
 
-### Obtain the Bastion Public IP, and a Control Node Internal IP
+### Using the Bastion node to interact with Kuberentes directly
 
-The Bastion VM is deployed to the "public" side of the VPC to act as a secure jumphost to access the Kubernetes nodes.
+ArgoCD and Grafana create a random Administrator password by default, and store them in a Kubernetes `Secret`.   
+Instructions to obtain this or generally access the Kubernetes API directly can be found in the following doc on how to use the Bastion.
 
-1. Login to the zCompute Web Console
-2. Switch to the desired Project from the top-right of the web page
-3. Navigate to **Compute > Instances**
-4. Look for the instance named `<cluster-name>-bastion` and select it
-   * This will also be the only instance with an `Elastic IP` defined
-5. Note down this Elastic IP, we will use it later as `BASTION_PUBLIC_IP`
-6. Look for any instance named `<cluster-name>-control-<number>` and select it
-7. Note down the IP for this VM, we will use it later as `CONTROL_NODE_IP`
+[zCompute K8s Bastion](zcompute_bastion.md)
 
-For ease, you can SSH into a Control Node through the Bastion VM with the following command
-```
-PEM_KEY_PATH=<>
-BASTION_PUBLIC_IP=<>
-CONTROL_NODE_IP=<>
-ssh -oProxyCommand="ssh ubuntu@${BASTION_PUBLIC_IP} -i ${PEM_KEY_PATH} -W %h:%p" \
-    -i ${PEM_KEY_PATH} ubuntu@${CONTROL_NODE_IP}
-```
-
-### Accessing services
-
-ArgoCD and Grafana (backed by Victoria Metrics) are provided as samples of further applications or workflows that can be utilized here.  
-Further configuration should be considered for these as well(such as company-integrated auth) when evaluating for potential production deployments.
-
-If `k8s_ingress_rootdomain` was defined, then `<your-tld-domain>` needs to be configured one of the following ways:
-* Modify your computer's hosts file to set `onyx.<your-tld-domain>`, `argocd.<your-tld-domain>`, and `grafana.<your-tld-domain>` to the Traefik Loadbalancer IP.
-* Set `*.<your-tld-domain>` to the Traefik Loadbalancer IP with your DNS provider.
-* Set these somewhere else in your DNS chain(Company firewall/router/DNS Server/etc)
-
-Both ArgoCD and Grafana will create a random administrator password and store it within a Kubernetes `Secret`, which we'll use the bastion VM to obtain.   
-
-#### Onyx
-
-Onyx is configured by default with standard authentication, so the first user to create an account will be set as the admin.
-
-If `k8s_ingress_rootdomain` was defined, then it is configured to `onyx.<your-tld-domain>` and will only answer to that domain.   
-If `k8s_ingress_rootdomain` was left empty, then it was configured as a "catch-all" in the Traefik Loadbalancer. So it can be accessed via `https://<public-ip>` gained above.   
-
-#### ArgoCD
-
-ArgoCD creates a random administrator password and stores it in a Kubernetes `Secret`.
-
-The ArgoCD Administrator password can be obtain with:
-```
-PEM_KEY_PATH=<>
-BASTION_PUBLIC_IP=<>
-CONTROL_NODE_IP=<>
-ssh -t -oProxyCommand="ssh ubuntu@${BASTION_PUBLIC_IP} -i ${PEM_KEY_PATH} -W %h:%p" \
-    -i ${PEM_KEY_PATH} ubuntu@${CONTROL_NODE_IP} \
-    'sudo kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d ; echo'
-```
-
-If `k8s_ingress_rootdomain` was defined, then it is configured to `argocd.<your-tld-domain>` and will only answer to that domain(or via the port-forward method).   
-If `k8s_ingress_rootdomain` was left empty, then ArgoCD is configured to remain "internal" and port-forwarding via the bastion is necessary.
-
-To setup temporary access to ArgoCD through portforwarding through the bastion:
-```
-PEM_KEY_PATH=<>
-BASTION_PUBLIC_IP=<>
-CONTROL_NODE_IP=<>
-ssh -t -oProxyCommand="ssh ubuntu@${BASTION_PUBLIC_IP} -i ${PEM_KEY_PATH} -W %h:%p" \
-    -i ${PEM_KEY_PATH} ubuntu@${CONTROL_NODE_IP} \
-    -L 8080:127.0.0.1:8080 \
-    'watch -d sudo kubectl port-forward svc/argo-cd-argocd-server -n argocd 8080:80 --address 0.0.0.0'
-```
-Then open in a local browser at `http://localhost:8080`, logging in with username `admin` and the password gained from the above section.
-
-#### Grafana
-
-Grafana creates a random administrator password and stores it in a Kubernetes `Secret`.
-
-The Grafana Administrator password can be obtain with:
-```
-PEM_KEY_PATH=<>
-BASTION_PUBLIC_IP=<>
-CONTROL_NODE_IP=<>
-ssh -t -oProxyCommand="ssh ubuntu@${BASTION_PUBLIC_IP} -i ${PEM_KEY_PATH} -W %h:%p" \
-    -i ${PEM_KEY_PATH} ubuntu@${CONTROL_NODE_IP} \
-    'sudo kubectl -n victoria-metrics-k8s-stack get secret victoria-metrics-k8s-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo'
-```
-
-If `k8s_ingress_rootdomain` was defined, then it is configured to `grafana.<your-tld-domain>` and will only answer to that domain(or via the port-forward method).   
-If `k8s_ingress_rootdomain` was left empty, then Grafana is configured to remain "internal" and port-forwarding via the bastion is necessary.
-
-To setup temporary access to Grafana through portforwarding through the bastion:
-```
-PEM_KEY_PATH=<>
-BASTION_PUBLIC_IP=<>
-CONTROL_NODE_IP=<>
-ssh -t -oProxyCommand="ssh ubuntu@${BASTION_PUBLIC_IP} -i ${PEM_KEY_PATH} -W %h:%p" \
-    -i ${PEM_KEY_PATH} ubuntu@${CONTROL_NODE_IP} \
-    -L 8080:127.0.0.1:8080 \
-    'watch -d sudo kubectl port-forward svc/victoria-metrics-k8s-stack-grafana -n victoria-metrics-k8s-stack 8080:80 --address 0.0.0.0'
-```
-Then open in a local browser at `http://localhost:8080`, logging in with username `admin` and the password gained from the above section.
+If you are primarily interested in interacting with Onyx, then you can either access it via `https://<traefik-public-ip>` gained from above or `https://onyx.<your-tld-domain>` if you provided a rootdomain during configuration, then move on to [Onyx Application](#onyx-application)
 
 ## Destroying the cluster
 

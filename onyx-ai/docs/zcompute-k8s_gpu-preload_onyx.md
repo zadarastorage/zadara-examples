@@ -81,6 +81,10 @@ This includes [Traefik](https://traefik.io/) as a default Ingress controller, wh
 
 From here, access can be gained to the Onyx software via `https://<public-ip>`. By default a self-signed certificate will be used for demonstration purposes.
 
+### (Optional) Using the bastion node to gain access to control nodes
+
+[zCompute K8s Bastion](zcompute_bastion.md)
+
 ## Destroying the cluster
 
 If you need to tear down the cluster, run:
