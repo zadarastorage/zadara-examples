@@ -143,7 +143,7 @@ module "k8s" {
       repository_name = "ollama-helm"
       repository_url  = "https://otwld.github.io/ollama-helm/"
       chart           = "ollama"
-      version         = "1.1.2"
+      version         = "1.4.1"
       namespace       = "ollama"
       config = {
         ollama = {
@@ -184,7 +184,7 @@ module "k8s" {
       repository_name = "zadarastorage"
       repository_url  = "https://zadarastorage.github.io/helm-charts"
       chart           = "onyx"
-      version         = "0.0.8"
+      version         = "0.0.10"
       namespace       = "onyx"
       config = {
         inference = {
