@@ -13,12 +13,12 @@ This range is intended to provide a buffer for scaling up/down from regular usag
 
 | Resource | Min | Max |
 | -------- | --- | --- |
-| Instances  | TBD | TBD |
+| Instances  | 16 | 18 |
 | Elastic IPs | 4 | 4 |
-| vCPU | TBD | TBD |
-| RAM | TBD | TBD |
-| vGPU (Tesla A16) | TBD | TBD |
-| EBS Storage | TBD | TBD |
+| vCPU | 75 | 88 |
+| RAM | 529G | 625G |
+| vGPU (Tesla A16) | 2 | 3 |
+| EBS Storage | ~1120GB | TBD |
 
 > [!WARNING]
 > It is important to ensure that the zCompute account has adequate account limits to run this project.
