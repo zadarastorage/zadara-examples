@@ -34,7 +34,7 @@ This procedure assumes Mac or Linux, and deploys the `zcompute-k8s_gpu-preload_o
 
 ### Deployment
 
-This example primarily installs a Kubernetes cluster with Ollama and Onyx preinstalled, with Oynx configured as a catch-all endpoint in the loadbalancer.
+This example primarily installs a Kubernetes cluster with Ollama and Onyx preinstalled, with Onyx configured as a catch-all endpoint in the loadbalancer.
 
 ### Launch the project
 
