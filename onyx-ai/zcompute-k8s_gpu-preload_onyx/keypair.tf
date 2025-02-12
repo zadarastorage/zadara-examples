@@ -5,7 +5,7 @@ variable "keypair_name" {
 
 variable "keypair_publickey" {
   type        = string
-  description = "Contents of the user's public ssh key"
+  description = "Contents of the user's public ssh keyfile. Ex: ssh-rsa AAB3Nze..."
 }
 
 resource "aws_key_pair" "this" {

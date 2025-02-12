@@ -1,6 +1,10 @@
 variable "k8s_name" {
   type        = string
   description = "Display name for the k8s cluster"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9-]*$", var.k8s_name))
+    error_message = "The value for 'k8s_name' must contain only alphanumeric characters and hyphens."
+  }
 }
 
 variable "k8s_version" {

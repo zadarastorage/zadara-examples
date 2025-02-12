@@ -1,6 +1,10 @@
 variable "vpc_name" {
   type        = string
   description = "Display name for the VPC"
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9-]*$", var.vpc_name))
+    error_message = "The value for 'vpc_name' must contain only alphanumeric characters and hyphens."
+  }
 }
 
 variable "vpc_cidr" {

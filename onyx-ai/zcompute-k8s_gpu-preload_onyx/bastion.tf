@@ -1,6 +1,6 @@
 variable "bastion_enabled" {
   type        = bool
-  description = "Enable bastion jumphost"
+  description = "Enable bastion jumphost (true/false)"
 }
 
 variable "bastion_ssh_source_cidr" {
