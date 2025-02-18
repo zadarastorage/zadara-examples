@@ -1,0 +1,1 @@
+../zcompute-k8s_gpu-preload_onyx/provider.tf
