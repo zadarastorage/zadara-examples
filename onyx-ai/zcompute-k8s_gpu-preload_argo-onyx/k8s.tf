@@ -98,7 +98,7 @@ module "k8s" {
       #repository_name = "zadarastorage"
       #repository_url  = "https://zadarastorage.github.io/helm-charts"
       chart     = "argo-examples-onyx"
-      version   = "0.0.26"
+      version   = "0.0.27"
       namespace = "argo-examples"
       config    = local.argo-examples
     }
