@@ -13,8 +13,41 @@ variable "k8s_version" {
   default     = "1.31.2"
 }
 
+# Object storage backup configuration
+variable "k8s_etcd_s3_endpoint" {
+  type        = string
+  description = "ETCD Backup: S3 Compatible endpoint domain(NOT A URL!). ex: vsa-000000xx-public-xyz.zadarazios.com"
+}
+variable "k8s_etcd_s3_access_key" {
+  type        = string
+  description = "ETCD Backup: S3 Compatible Access Key"
+}
+variable "k8s_etcd_s3_secret_key" {
+  type        = string
+  description = "ETCD Backup: S3 Compatible Secret Key"
+  sensitive   = true
+}
+variable "k8s_etcd_s3_bucket" {
+  type        = string
+  description = "ETCD Backup: S3 Compatible Bucket"
+}
+variable "k8s_etcd_s3_region" {
+  type        = string
+  description = "ETCD Backup: S3 Compatible Region"
+}
+variable "k8s_etcd_s3_folder" {
+  type        = string
+  description = "ETCD Backup: Path Prefix"
+}
+variable "k8s_etcd_snapshot_retention" {
+  type        = number
+  description = "ETCD Backup: Snapshot count retention"
+  # k3s retention is configured on all control plane VMs, but k3s implementation does not account for parallel backup execution. So 3 snapshots per cycle will still remove 3 oldest snapshots regardless of which control plane VM created it.
+  # 168 = 28 days * 2 a day * 3 VMs.
+  default = 168
+}
+
 module "k8s" {
-  #source = "../../../terraform-zcompute-k8s"
   source = "github.com/zadarastorage/terraform-zcompute-k8s?ref=main"
   # It's recommended to change `main` to a specific release version to prevent unexpected changes
 
@@ -22,6 +55,17 @@ module "k8s" {
   subnets = module.vpc.private_subnets
 
   tags = var.tags
+
+  etcd_backup = {
+    s3                 = true
+    s3-endpoint        = var.k8s_etcd_s3_endpoint
+    s3-access-key      = var.k8s_etcd_s3_access_key
+    s3-secret-key      = var.k8s_etcd_s3_secret_key
+    s3-bucket          = var.k8s_etcd_s3_bucket
+    s3-region          = var.k8s_etcd_s3_region
+    s3-folder          = var.k8s_etcd_s3_folder
+    snapshot-retention = var.k8s_etcd_snapshot_retention
+  }
 
   cluster_name    = var.k8s_name
   cluster_version = var.k8s_version
