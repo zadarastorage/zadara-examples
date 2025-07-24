@@ -4,7 +4,7 @@
 
 This folder contains examples and reference projects for use with [Zadara Terraform Modules](https://registry.terraform.io/namespaces/zadarastorage) to deploy [Onyx AI Assistant](https://www.onyx.app/).
 
-These examples require a **Zadara zCompute Account** and will deploy a multinode Kubernetes cluster with resources and configurations necessary to run Onyx.
+These examples require a **Zadara zCompute Account** and an S3-Compatible Storage Endpoint. They will deploy a multinode Kubernetes cluster with resources and configurations necessary to run Onyx.
 
 The code examples provided in this repository are for educational and illustrative purposes only. They may require further modifications and testing before being used in production environments. Use these examples as a reference and adapt them to meet your specific needs and requirements.
 
@@ -14,6 +14,7 @@ It is advised to complete at least  **General > [Preparing zCompute Account](doc
 
 * General
    * [Preparing zCompute Account](docs/01_setup-zcompute.md)
+   * [Obtaining Credentials from Zadara Object Storage](https://guides.zadara.com/zios-guide/latest/object-storage-clients.html#authentication-information)
 * Projects
    * [Deploying Onyx Assistant - Minimal](docs/zcompute-k8s_gpu-preload_onyx.md)
    * [Deploying Onyx Assistant - High Availability](docs/zcompute-k8s_gpu-preload_argo-onyx.md)

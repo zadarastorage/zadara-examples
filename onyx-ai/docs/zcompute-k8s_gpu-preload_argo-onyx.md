@@ -4,6 +4,8 @@ This project is to quickly setup Onyx AI within your zCompute account.
 
 It is assumed that the user already knows their zCompute site's URL, and has configured the relevant **Access Keys** and **VM Placement Rules**. If not, please review [Preparing zCompute Account](01_setup-zcompute.md).
 
+It is also necessary to provide S3-Compatible Object Storage credentials to the convenience script so that the cluster's backup and auto-restore functionality is enabled.
+
 ## Default Resource requirements
 
 The project is deployed with some limits primarily intended to offer a buffer for upgrades/maintenance/etc for things within Kubernetes, and should be adequate for continued operation.
