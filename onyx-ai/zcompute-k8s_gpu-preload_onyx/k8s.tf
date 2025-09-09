@@ -185,9 +185,9 @@ module "k8s" {
       order           = 34
       wait            = false
       repository_name = "ollama-helm"
-      repository_url  = "https://otwld.github.io/ollama-helm/"
+      repository_url  = "https://helm.otwld.com/"
       chart           = "ollama"
-      version         = "1.24.0"
+      version         = "1.28.0"
       namespace       = "ollama"
       config = {
         ollama = {
