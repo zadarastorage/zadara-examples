@@ -29,7 +29,7 @@ This project automatically deployed `Ollama` with `llama3.1:8b-instruct-q8_0` to
 
 3. Fill out the form to configure Onyx to use Ollama as deployed within the Kubernetes Cluster
    * **Display Name** - `Ollama`
-   * **Provider Name** - `ollama`
+   * **Provider Name** - `ollama_chat`
    * **[Optional] API Base** - `http://ollama.ollama.svc.cluster.local:11434`
    * **Model Names** (click Add New) - `llama3.1:8b-instruct-q8_0`
    * **Default Model** - `llama3.1:8b-instruct-q8_0`
