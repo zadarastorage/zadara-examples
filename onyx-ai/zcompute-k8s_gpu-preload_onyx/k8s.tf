@@ -351,6 +351,12 @@ module "k8s" {
       cloudinit_config = [
         {
           order        = 11
+          filename     = "k3s-nvme-r0.sh"
+          content_type = "text/x-shellscript"
+          content      = file("${path.module}/files/k3s-nvme-r0.sh")
+        },
+        {
+          order        = 11
           filename     = "setup-gpu.sh"
           content_type = "text/x-shellscript"
           content      = file("${path.module}/files/setup-gpu.sh")

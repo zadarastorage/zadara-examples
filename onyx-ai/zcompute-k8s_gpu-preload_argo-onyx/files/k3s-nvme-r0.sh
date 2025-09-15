@@ -1,0 +1,1 @@
+../../zcompute-k8s_gpu-preload_onyx/files/k3s-nvme-r0.sh
