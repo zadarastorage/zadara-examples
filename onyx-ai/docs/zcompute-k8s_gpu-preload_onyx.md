@@ -22,7 +22,7 @@ This range is intended to provide a buffer for scaling up/down from regular usag
 | Elastic IPs | 4 | 4 |
 | vCPU | 40 | 88 |
 | RAM | 241G | 625G |
-| vGPU (Tesla A16) | 1 | 3 |
+| vGPU (Tesla L4) | 1 | 3 |
 | EBS Storage | ~774G | TBD |
 
 > [!WARNING]
@@ -53,17 +53,20 @@ This example primarily installs a Kubernetes cluster with Ollama and Onyx preins
      ./configure.sh zcompute-k8s_gpu-preload_onyx
      ```
    * Answer all the questions, if you make a mistake, you can edit the results later in `zcompute-k8s_gpu-preload_onyx/config.auto.tfvars`
-4. Launch the `deploy.sh` convienence script
+4. Potential extra modifications to k8s.tf
+   * Some zCompute clouds are in process of an instance type renewal for GPU VMs, or will be in the near future.
+   * `ZGL4.7large` Is set as default which replaces `GPU_L4.7large`, you may need to revise this in [k8s.tf](https://github.com/zadarastorage/zadara-examples/blob/main/onyx-ai/zcompute-k8s_gpu-preload_onyx/k8s.tf#L336) depending on the zCompute version
+5. Launch the `deploy.sh` convienence script
    * ```
      ./deploy.sh zcompute-k8s_gpu-preload_onyx
      ```
    * Script will initialize any Terraform dependencies and eventually ask the user to approve the deployment by entering `yes`
-5. Launch the `deploy.sh` convienence script a second time
+6. Launch the `deploy.sh` convienence script a second time
    * ```
      ./deploy.sh zcompute-k8s_gpu-preload_onyx
      ```
    * This is to validate all resources/tags were deployed, it will prompt again for `yes` if any changes are necessary.
-6. Steps 4 and 5 will have launched all the essentials via Terraform, from there the Kubernetes cluster will initialize itself and finish deploying/configuring things like a public loadbalancer
+7. Steps 4 and 5 will have launched all the essentials via Terraform, from there the Kubernetes cluster will initialize itself and finish deploying/configuring things like a public loadbalancer
 
 > [!CAUTION]
 > These scripts will maintain your `config.auto.tfvars` and other state-related files within the same folder as the project launched. Take care manipulating or deleting them as that can cause Terraform to be out-of-sync.

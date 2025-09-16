@@ -253,39 +253,47 @@ module "k8s" {
 
   node_groups = {
     control = {
-      role         = "control"
-      min_size     = 3
-      max_size     = 3
-      desired_size = 3
+      role             = "control"
+      min_size         = 3
+      max_size         = 3
+      desired_capacity = 3
     }
     worker = {
-      role          = "worker"
-      min_size      = 1
-      max_size      = 3
-      desired_size  = 1
-      instance_type = "z8.3xlarge"
+      role              = "worker"
+      min_size          = 1
+      max_size          = 3
+      desired_capacity  = 1
+      instance_type     = "z8.3xlarge"
     }
     gpu = {
       role             = "worker"
       min_size         = 0
       max_size         = 3
-      desired_size     = 1
-      instance_type    = "A02.4xLarge" # TODO Adjust to formalized instance_type name
+      desired_capacity = 1
       root_volume_size = 200
+      # instance_type    = "GPU_L4.7large" # Possible previous instance type label
+      instance_type    = "ZGL4.7large" # 14 vCPU, 112G RAM, 1x NVIDIA L4(10de:27b8), 1x 1.9T ephemeral NVMe(144d:a80a)
+      # ^ If changed, remember to update the tesla-X ID's below and update the resources tag to be the amount of vRAM + 1
       k8s_taints = {
         "nvidia.com/gpu" = "true:NoSchedule"
       }
       k8s_labels = {
-        "tesla-a16"                       = "true"
+        "tesla-l4"                       = "true"
         "nvidia.com/gpu"                  = "true"
-        "nvidia.com/device-plugin.config" = "tesla-25b6"
+        "nvidia.com/device-plugin.config" = "tesla-27b8"
         "nvidia.com/gpu.deploy.driver"    = "false"
       }
       tags = {
-        "k8s.io/cluster-autoscaler/node-template/resources/nvidia.com/gpu" = "17"
-        "nvidia.com/device-plugin.config"                                  = "tesla-25b6"
+        "k8s.io/cluster-autoscaler/node-template/resources/nvidia.com/gpu" = "25"
+        "nvidia.com/device-plugin.config"                                  = "tesla-27b8"
       }
       cloudinit_config = [
+        {
+          order        = 11
+          filename     = "k3s-nvme-r0.sh"
+          content_type = "text/x-shellscript"
+          content      = file("${path.module}/files/k3s-nvme-r0.sh")
+        },
         {
           order        = 11
           filename     = "setup-gpu.sh"
