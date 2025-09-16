@@ -13,6 +13,11 @@ variable "k8s_version" {
   default     = "1.31.2"
 }
 
+variable "k8s_cluster_token" {
+  type        = string
+  description = "Short string to be used as cluster join token. Recommend random string of ~16 alphanumeric characters."
+}
+
 variable "k8s_argo_autoupdate" {
   type        = bool
   description = "Configure argo to use bleeding edge version of app bundles, not considered stable as there may be active development"
@@ -90,8 +95,9 @@ module "k8s" {
     snapshot-retention = var.k8s_etcd_snapshot_retention
   }
 
-  cluster_name    = var.k8s_name
-  cluster_version = var.k8s_version
+  cluster_name          = var.k8s_name
+  cluster_version       = var.k8s_version
+  cluster_cluster_token = var.k8s_cluster_token
   cluster_helm = {
     argo-cd = {
       order           = 30
@@ -259,11 +265,11 @@ module "k8s" {
       desired_capacity = 3
     }
     worker = {
-      role              = "worker"
-      min_size          = 1
-      max_size          = 3
-      desired_capacity  = 1
-      instance_type     = "z8.3xlarge"
+      role             = "worker"
+      min_size         = 1
+      max_size         = 3
+      desired_capacity = 1
+      instance_type    = "z8.3xlarge"
     }
     gpu = {
       role             = "worker"
@@ -272,13 +278,13 @@ module "k8s" {
       desired_capacity = 1
       root_volume_size = 200
       # instance_type    = "GPU_L4.7large" # Possible previous instance type label
-      instance_type    = "ZGL4.7large" # 14 vCPU, 112G RAM, 1x NVIDIA L4(10de:27b8), 1x 1.9T ephemeral NVMe(144d:a80a)
+      instance_type = "ZGL4.7large" # 14 vCPU, 112G RAM, 1x NVIDIA L4(10de:27b8), 1x 1.9T ephemeral NVMe(144d:a80a)
       # ^ If changed, remember to update the tesla-X ID's below and update the resources tag to be the amount of vRAM + 1
       k8s_taints = {
         "nvidia.com/gpu" = "true:NoSchedule"
       }
       k8s_labels = {
-        "tesla-l4"                       = "true"
+        "tesla-l4"                        = "true"
         "nvidia.com/gpu"                  = "true"
         "nvidia.com/device-plugin.config" = "tesla-27b8"
         "nvidia.com/gpu.deploy.driver"    = "false"
