@@ -279,6 +279,9 @@ module "k8s" {
           cluster = { instances = 1, monitoring = { enabled = false } }
           pooler  = { instances = 1, monitoring = { enabled = false } }
         }
+        redis = {
+          image = { repository = "bitnamilegacy/redis" }
+        }
       }
     }
   }
