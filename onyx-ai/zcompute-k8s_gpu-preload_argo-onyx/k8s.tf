@@ -150,7 +150,7 @@ module "k8s" {
       #repository_name = "zadarastorage"
       #repository_url  = "https://zadarastorage.github.io/helm-charts"
       chart     = "argo-examples-onyx"
-      version   = "0.0.36"
+      version   = "0.0.37"
       namespace = "argo-examples"
       config    = local.argo-examples
     }
