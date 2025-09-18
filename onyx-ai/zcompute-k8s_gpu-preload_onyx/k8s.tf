@@ -234,7 +234,7 @@ module "k8s" {
       repository_name = "zadarastorage"
       repository_url  = "https://zadarastorage.github.io/helm-charts"
       chart           = "onyx"
-      version         = "0.0.23"
+      version         = "0.0.24"
       namespace       = "onyx"
       config = {
         inference = {
@@ -278,9 +278,6 @@ module "k8s" {
         cnpg = {
           cluster = { instances = 1, monitoring = { enabled = false } }
           pooler  = { instances = 1, monitoring = { enabled = false } }
-        }
-        redis = {
-          image = { repository = "bitnamilegacy/redis" }
         }
       }
     }
