@@ -72,6 +72,36 @@ locals {
         rootDomain = var.k8s_ingress_rootdomain
       }
     }
+    common = {
+      ollama = {
+        modelPath = "/var/lib/rancher/k3s/ollama-models"
+        extraEnv = [
+          {
+            name  = "OLLAMA_CONTEXT_LENGTH"
+            value = "32768"
+          },
+          {
+            name  = "OLLAMA_KEEP_ALIVE"
+            value = "-1"
+          },
+          {
+            name  = "OLLAMA_FLASH_ATTENTION"
+            value = "1"
+          },
+          {
+            name  = "OLLAMA_KV_CACHE_TYPE"
+            value = "q8_0"
+          },
+        ]
+      }
+      onyx = {
+        configMap = {
+          "global" = {
+            "GEN_AI_MAX_TOKENS" = "32768"
+          }
+        }
+      }
+    }
   }
 }
 
