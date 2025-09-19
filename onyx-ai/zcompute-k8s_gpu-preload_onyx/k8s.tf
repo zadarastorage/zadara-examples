@@ -193,7 +193,7 @@ module "k8s" {
       repository_name = "ollama-helm"
       repository_url  = "https://helm.otwld.com/"
       chart           = "ollama"
-      version         = "1.28.0"
+      version         = "1.29.0"
       namespace       = "ollama"
       config = {
         ollama = {
@@ -201,15 +201,40 @@ module "k8s" {
           models = { pull = ["llama3.1:8b-instruct-q8_0"], run = ["llama3.1:8b-instruct-q8_0"] }
         }
         replicaCount = 1
-        extraEnv = [{
-          name  = "OLLAMA_KEEP_ALIVE"
-          value = "-1"
-        }]
+        extraEnv = [
+          {
+            name  = "OLLAMA_CONTEXT_LENGTH"
+            value = "32768"
+          },
+          {
+            name  = "OLLAMA_KEEP_ALIVE"
+            value = "-1"
+          },
+          {
+            name  = "OLLAMA_FLASH_ATTENTION"
+            value = "1"
+          },
+          {
+            name  = "OLLAMA_KV_CACHE_TYPE"
+            value = "q8_0"
+          },
+          {
+            name  = "OLLAMA_MODELS"
+            value = "/var/lib/rancher/k3s/ollama-models"
+          },
+        ]
+        volumeMounts = [
+          { "name" : "ollama-models", "mountPath" : "/var/lib/rancher/k3s/ollama-models" },
+        ]
+        volumes = [
+          { "name" : "ollama-models",
+          "hostPath" : { "type" : "DirectoryOrCreate", "path" : "/var/lib/rancher/k3s/ollama-models" } }
+        ]
+        persistentVolume = { enabled = false }
         resources = {
-          requests = { cpu = "4", memory = "15Gi", "nvidia.com/gpu" = "8" }
-          limits   = { cpu = "8", memory = "20Gi", "nvidia.com/gpu" = "8" }
+          requests = { cpu = "4", memory = "26Gi", "nvidia.com/gpu" = "12" }
+          limits   = { cpu = "8", memory = "36Gi", "nvidia.com/gpu" = "12" }
         }
-        persistentVolume = { enabled = true, size = "200Gi" }
         runtimeClassName = "nvidia"
         affinity = {
           nodeAffinity = {
@@ -237,6 +262,11 @@ module "k8s" {
       version         = "0.0.24"
       namespace       = "onyx"
       config = {
+        configMap = {
+          "global" = {
+            "GEN_AI_MAX_TOKENS" = "32768"
+          }
+        }
         inference = {
           tolerations      = [{ effect = "NoSchedule", operator = "Exists", key = "nvidia.com/gpu" }]
           runtimeClassName = "nvidia"
