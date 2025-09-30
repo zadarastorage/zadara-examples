@@ -127,7 +127,7 @@ module "k8s" {
 
   cluster_name          = var.k8s_name
   cluster_version       = var.k8s_version
-  cluster_cluster_token = var.k8s_cluster_token
+  cluster_token = var.k8s_cluster_token
   cluster_helm = {
     argo-cd = {
       order           = 30
