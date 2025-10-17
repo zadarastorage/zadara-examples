@@ -19,5 +19,9 @@ if [[ -x $(which apt-get) ]]; then
 	# Install packages
 	# Proprietary
 	#apt-get install -o Acquire::ForceIPv4=true -qq -y cuda-drivers cuda-drivers-fabricmanager nvidia-container-runtime nvtop
-	apt-get install -o Acquire::ForceIPv4=true -qq -y cuda-drivers-580 cuda-drivers-fabricmanager-580 nvidia-container-runtime nvtop
+	if [[ $(lspci -n -d '10de::0680' | wc -l) -gt 0 ]]; then
+		apt-get install -o Acquire::ForceIPv4=true -qq -y cuda-drivers-fabricmanager-580 nvidia-container-runtime nvtop
+	else
+		apt-get install -o Acquire::ForceIPv4=true -qq -y cuda-drivers-580 nvidia-container-runtime nvtop
+	fi
 fi
